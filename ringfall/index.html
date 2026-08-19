@@ -165,7 +165,20 @@ const SEED_HEX=SEED.toString(16).toUpperCase();
 const SIM_DT=1/120;                                // the race computes the same everywhere
 const $=id=>document.getElementById(id);
 /* where the descent lives. the crossing is carried home on this link. */
-const RETURN_TO='https://codifiedresonance.com/last-platform/moonline';
+const RETURN_TO='https://codifiedresonance.com/last-platform/moonline';   // fallback for direct arrivals
+let RETURN_URL=RETURN_TO;
+try{
+  // the descent hands each track its own address on the way in (?from=...),
+  // so the way home is always exactly the door you came through.
+  const fm=/[?&]from=([^&]+)/.exec(window.location.search||'');
+  if(fm){
+    const u=new URL(decodeURIComponent(fm[1]));
+    const h=u.hostname;
+    if(u.protocol==='https:'&&(h==='codifiedresonance.com'||h.endsWith('.codifiedresonance.com')||h.endsWith('.webflow.io')))
+      RETURN_URL=u.origin+u.pathname;
+  }
+}catch(e){}
+let backSet=false;
 const TRACK_KEY='ringfall';   // sovereign-local: the standing line lives on this device alone
 function loadLine(){try{const v=window.localStorage.getItem('moonline.line.'+TRACK_KEY);return v?parseFloat(v):null;}catch(e){return null;}}
 let splits={},splitMark=0,splitIdx=-1;   // the crossing, sector by sector
@@ -1206,6 +1219,8 @@ function updateDone(dt){
   hudEl.style.opacity=String(Math.max(0,1-doneT*0.8));
   if(!resShown&&doneT>3.0){
     resShown=true;
+    try{const bk0=$('btnBack');
+      if(bk0&&!backSet){bk0.href=RETURN_URL;bk0.style.display='inline-block';}}catch(e){}
     const place=finishOrder.indexOf(p)+1;
     resTitle.textContent=['FIRST','SECOND','THIRD','FOURTH'][place-1];
     resSub.textContent=fmtTime(p.fTime)+' — '+(place===1?'The rings release you.':'The rings release you anyway.');
@@ -1231,7 +1246,7 @@ function updateDone(dt){
         if(window.parent&&window.parent!==window)window.parent.postMessage({moonline:'crossed',track:TRACK_KEY},'*');
         // and either way, offer the way back, carrying the crossing with it
         const bk=$('btnBack');
-        if(bk){bk.href=RETURN_TO+'?crossed='+encodeURIComponent(TRACK_KEY);bk.style.display='inline-block';}
+        if(bk){backSet=true;bk.href=RETURN_URL+'?crossed='+encodeURIComponent(TRACK_KEY);bk.style.display='inline-block';}
       }catch(e){}
     })();
     results.style.display='flex';
