@@ -424,6 +424,48 @@ let dprNow=DPR_MAX,fpsAcc=0,fpsN=0;
 renderer.setPixelRatio(dprNow);
 renderer.setSize(window.innerWidth,window.innerHeight);
 document.body.appendChild(renderer.domElement);
+// ---------------- the lens ----------------
+// The world is rendered wide, then bent: the middle magnified, the edges kept.
+// The craft stays the size it should be; only the periphery reports the speed.
+// Cylindrical, so anything vertical stays vertical. ?lens=0 turns it off.
+let POST=false,postRT=null,postScene=null,postCam=null,postMat=null;
+const _lensV2=(THREE.Vector2?new THREE.Vector2():null);
+let lensLast={k:0,blur:0,render:0,centre:0};
+let lensCy=0;const _lensV3=(THREE.Vector3?new THREE.Vector3():null);
+try{
+  const lensOff=/[?&]lens=0/.test(window.location.search||'');
+  if(!lensOff&&renderer.capabilities&&THREE.ShaderMaterial&&THREE.WebGLRenderTarget&&_lensV2){
+    const sz=renderer.getDrawingBufferSize(_lensV2);
+    const MS=renderer.capabilities.isWebGL2&&THREE.WebGLMultisampleRenderTarget;
+    postRT=MS?new THREE.WebGLMultisampleRenderTarget(sz.x,sz.y,{format:THREE.RGBAFormat})
+             :new THREE.WebGLRenderTarget(sz.x,sz.y,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat});
+    if(MS)postRT.samples=4;
+    postMat=new THREE.ShaderMaterial({
+      uniforms:{tDiffuse:{value:postRT.texture},k:{value:0.1},blur:{value:0},seed:{value:0},cy:{value:0}},
+      vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}',
+      fragmentShader:[
+        'uniform sampler2D tDiffuse;uniform float k;uniform float blur;uniform float seed;uniform float cy;varying vec2 vUv;',
+        'float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233))+seed)*43758.5453);}',
+        'void main(){',
+        '  vec2 p=vUv*2.0-1.0;',
+        '  float s=1.0-k+k*p.x*p.x;',              // magnify the middle, keep the edges; verticals stay vertical
+        '  vec2 q=vec2(p.x*s,cy+(p.y-cy)*s);',     // the bend is centred on the craft: magnified, never displaced
+        '  vec2 uv=q*0.5+0.5;',
+        '  vec2 toC=vec2(0.5)-uv;',
+        '  float r2=clamp(dot(p,p)*0.5,0.0,1.0);',
+        '  float amt=blur*r2*r2;',                 // exposure smears the periphery; the centre stays sharp
+        '  float j=hash(vUv*vec2(1731.0,977.0));',
+        '  vec3 c=vec3(0.0);',
+        '  for(int i=0;i<10;i++){float t=(float(i)+j)/10.0;c+=texture2D(tDiffuse,uv+toC*amt*t).rgb;}',
+        '  gl_FragColor=vec4(c/10.0,1.0);',
+        '}'].join('\n'),
+      depthTest:false,depthWrite:false,toneMapped:false});
+    postScene=new THREE.Scene();
+    postCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+    postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),postMat));
+    POST=true;
+  }
+}catch(e){POST=false;}
 try{
   if(THREE.ACESFilmicToneMapping!==undefined)renderer.toneMapping=THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure=0.98;
@@ -511,15 +553,27 @@ const sunGlow=new THREE.Mesh(new THREE.SphereGeometry(110,12,12),matGlow(0xfff0d
 sunGlow.material.fog=false; sunGlow.position.set(3200,1700,-10500); scene.add(sunGlow);
 
 // ---- near dust (speed feel)
-const DUST_N=240;
+const DUST_N=420;   // the near medium: the only honest speedometer out here
 const dustGeo=new THREE.BufferGeometry();
 (function(){
   const a=new Float32Array(DUST_N*3);
   for(let i=0;i<DUST_N;i++){a[i*3]=rand(-90,90);a[i*3+1]=rand(-30,50);a[i*3+2]=rand(-620,10);}
   dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(a,3));
 })();
-const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0x9aa4b8,size:1.6,sizeAttenuation:false,transparent:true,opacity:0.6,depthWrite:false}));
+// attenuated: a grain a metre from the canopy is huge; one at six hundred is nothing.
+const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xaab4c8,size:0.24,sizeAttenuation:true,transparent:true,opacity:0.6,depthWrite:false}));
+try{applySprite(dust.material);}catch(e){}
 scene.add(dust);
+// exposure streaks: what a real shutter would record of the medium going by
+const streakGeo=new THREE.BufferGeometry();
+streakGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(DUST_N*6),3));
+(function(){const c=new Float32Array(DUST_N*6);
+  for(let i=0;i<DUST_N;i++){c[i*6]=0.78;c[i*6+1]=0.84;c[i*6+2]=0.96;}   // head bright, tail black: additive fade
+  streakGeo.setAttribute('color',new THREE.Float32BufferAttribute(c,3));})();
+const streakMat=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+const streaks=new THREE.LineSegments(streakGeo,streakMat);
+streaks.frustumCulled=false;
+scene.add(streaks);
 const dustAttr=dustGeo.attributes.position;
 
 // ---- persistent world objects (fixed course positions; z recomputed each frame)
@@ -742,6 +796,28 @@ let astAcc=0,metAcc=0;
 
 // ------------------------------------------------------------ audio (Web Audio, gesture-gated)
 let actx=null,engOsc=null,engGain=null,engFilt=null,windGain=null,driftGain=null;
+// a rock going by: a breath of air that isn't there, falling in pitch as it passes
+let whooshBuf=null,whooshT=-9;
+function whoosh(side,close,spd){
+  if(!actx||t-whooshT<0.09)return; whooshT=t;
+  try{
+    if(!whooshBuf){const n=Math.floor(actx.sampleRate*0.6);whooshBuf=actx.createBuffer(1,n,actx.sampleRate);
+      const d=whooshBuf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;}
+    const src=actx.createBufferSource();src.buffer=whooshBuf;
+    const bp=actx.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.3;
+    const now=actx.currentTime,kk=clamp(spd/330,0.3,1.5),dur=0.2+0.16/kk;
+    bp.frequency.setValueAtTime(1300+1000*kk,now);
+    bp.frequency.exponentialRampToValueAtTime(360,now+dur);      // doppler: it drops as it passes
+    const g=actx.createGain();const peak=Math.max(0.0002,0.055*clamp(close,0.12,1)*kk);
+    g.gain.setValueAtTime(0.0001,now);
+    g.gain.exponentialRampToValueAtTime(peak,now+dur*0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+    src.connect(bp);bp.connect(g);
+    if(actx.createStereoPanner){const pn=actx.createStereoPanner();pn.pan.value=clamp(side/6,-1,1);g.connect(pn);pn.connect(actx.destination);}
+    else g.connect(actx.destination);
+    src.start(now);src.stop(now+dur+0.05);
+  }catch(e){}
+}
 function initAudio(){
   if(actx)return;
   try{
@@ -944,6 +1020,10 @@ function placeRacers(viewS,dt){
   }
 }
 let playerBoosting=false;
+// speed feel — presentation only. nothing here touches the simulation.
+let camBack=0,camBackV=0,camLastSpd=0,camAccS=0;
+let dustPrevZ=null,dustVel=0,mediumK=1,dustOpBase=0.6;
+let lensSpd=0,lensTight=0,boostPunch=0,wasBoost=false;
 let boostMeter=100;
 
 function updateGrid(dt){
@@ -1054,7 +1134,8 @@ function collide(o){
   const d2=dx*dx+dy*dy;
   if(d2<rr*rr)hitPlayer(o);
   else{
-    if(!o.grazed&&d2<rr*rr*4.8){o.grazed=true;grazes++;blip(760,0.04,0.04);}   // the near-miss, acknowledged
+    if(!o.grazed&&d2<rr*rr*4.8){o.grazed=true;grazes++;}   // the near-miss, counted
+    if(!o.whooshed&&d2<rr*rr*14){o.whooshed=true;whoosh(dx,1-Math.sqrt(d2/(rr*rr*14)),player.speed);}   // and heard
     if(d2<rr*rr*22){                                   // and how close is now a resource, not just a thrill
       const near=1-Math.sqrt(d2)/(rr*4.7);
       if(near>0)nearAcc+=near*(o.r?clamp(o.r/2.0,0.35,1.7):0.5);
@@ -1062,6 +1143,7 @@ function collide(o){
   }
 }
 function hitPlayer(o){
+  camBackV-=12;   // struck: the eye is thrown forward
   contacts++;cleanRun=0;
   if(player.vx===undefined){player.vx=0;player.vy=0;}
   if(o){                                            // struck: the rock shoves, and you keep the shove
@@ -1198,7 +1280,7 @@ function updateRace(dt){
   // drift from the line and you still travel — the race just recedes.
   const rOff=Math.sqrt(p.x*p.x+(p.y-1.5)*(p.y-1.5));
   const lineK=clamp(1-Math.max(0,rOff-18)/55,0.3,1);
-  dust.material.opacity=0.6*clamp(1-Math.max(0,rOff-18)/40,0.12,1);   // out there, the near medium thins to stars
+  dustOpBase=0.6*clamp(1-Math.max(0,rOff-18)/40,0.12,1);   // out there, the near medium thins to stars
   p.prevS=p.s;
   // THE RELEASE — in the drift the track stops holding your nose.
   // hands become heading, heading becomes where you actually go. loose, heavy, unhurried.
@@ -1267,11 +1349,18 @@ function updateRace(dt){
   camYaw+=(hYaw*driftK-camYaw)*Math.min(1,dt*1.5);    // the eye swings after the nose, a beat late
   camPit+=(hPit*driftK-camPit)*Math.min(1,dt*1.5);
   // sit behind the nose and look down it. at heading zero this is the old camera exactly.
-  const camR=16;
+  // the camera has mass: it falls back when you surge, lurches when you're struck
+  const accNow=(p.speed-camLastSpd)/Math.max(dt,1e-4); camLastSpd=p.speed;
+  camAccS+=(clamp(accNow,-400,400)-camAccS)*Math.min(1,dt*5);
+  const camTarget=clamp(camAccS*0.006,-1.2,2.4)+(playerBoosting?1.4:0);
+  camBackV+=((camTarget-camBack)*16-camBackV*7)*dt;
+  camBack+=camBackV*dt;
+  const camR=16+camBack*(1-driftK);
   const fX=Math.sin(camYaw)*Math.cos(camPit), fY=Math.sin(camPit), fZ=-Math.cos(camYaw)*Math.cos(camPit);
   // near the line the frame lets you slide across it; out in the open the eye holds you.
   anchorK+=(clamp(Math.max(driftK,(rOff-24)/44),0,1)-anchorK)*Math.min(1,dt*2.2);
-  const anchorMix=anchorK;
+  const portraitK=clamp((1.05-camera.aspect)/0.45,0,1);   // a narrow screen has no room to let you slide
+  const anchorMix=Math.max(anchorK,portraitK);
   const aX=p.x*(0.55+0.45*anchorMix)+sx, aY=4.6+p.y*(0.5+0.5*anchorMix)+sy;
   camera.position.set(aX-fX*camR, aY-fY*camR, -fZ*camR);
   camera.lookAt(aX+fX*60, aY+fY*60-3.6, fZ*60-10);
@@ -1513,7 +1602,69 @@ function tick(){
     else if(phase==='done')updateDone(dt);
     else if(phase==='relive')updateRelive(dt);
   }
-  renderer.render(scene,camera);
+  updateSpeedFeel(dt);
+  if(POST){
+    try{
+      const sz=renderer.getDrawingBufferSize(_lensV2);
+      if(postRT.width!==sz.x||postRT.height!==sz.y)postRT.setSize(sz.x,sz.y);
+      const c0=camera.fov;
+      const boostVis=(phase==='race'&&playerBoosting)?1:0;
+      const dK=driftK||0;
+      // the bend breathes with speed: nearly flat at rest, deepening as you go
+      const wideK=clamp((camera.aspect-0.75)/0.9,0,1);   // the bend is a widescreen lens; on a portrait phone it stands down
+      const kk=clamp((0.10+lensSpd*0.20+boostVis*0.04+boostPunch*0.07)*(1-dK*0.8)*wideK,0,0.42);
+      const cDeg=clamp(c0-lensTight*(9+lensSpd*6)*wideK,40,110);          // what the middle looks like
+      const rDeg=clamp(2*Math.atan(Math.tan(cDeg*Math.PI/360)/(1-kk))*180/Math.PI,cDeg,118);   // how wide we really see
+      const blur=clamp((lensSpd*0.045+boostVis*0.015+boostPunch*0.035)*mediumK*(1-dK),0,0.09);
+      postMat.uniforms.k.value=kk;postMat.uniforms.blur.value=blur;postMat.uniforms.seed.value=(t*7.13)%100;
+      lensLast={k:kk,blur:blur,render:rDeg,centre:cDeg};
+      camera.fov=rDeg;camera.updateProjectionMatrix();
+      // find the craft on the wide frame, and centre the bend on it
+      let cyT=0;
+      if(player&&player.mesh&&(phase==='race'||phase==='done'||phase==='relive')){
+        player.mesh.getWorldPosition(_lensV3);_lensV3.project(camera);
+        if(_lensV3.z<1)cyT=clamp(_lensV3.y,-0.75,0.3);
+      }
+      lensCy+=(cyT-lensCy)*Math.min(1,dt*3);
+      postMat.uniforms.cy.value=lensCy;
+      renderer.setRenderTarget(postRT);renderer.render(scene,camera);
+      renderer.setRenderTarget(null);renderer.render(postScene,postCam);
+      camera.fov=c0;camera.updateProjectionMatrix();
+    }catch(e){POST=false;try{renderer.setRenderTarget(null);}catch(e2){}renderer.render(scene,camera);}
+  }else renderer.render(scene,camera);
+}
+// ---------------- speed, as it is seen ----------------
+function updateSpeedFeel(dt){
+  if(!(dt>0))return;
+  const da=dustAttr.array;
+  if(!dustPrevZ){dustPrevZ=new Float32Array(DUST_N);for(let i=0;i<DUST_N;i++)dustPrevZ[i]=da[i*3+2];}
+  // measure the medium's actual motion: works in the race, the relive, the arrival, anywhere
+  let sum=0,n=0;
+  for(let i=0;i<DUST_N;i++){const dz=da[i*3+2]-dustPrevZ[i];if(dz>=0&&dz<240){sum+=dz;n++;}dustPrevZ[i]=da[i*3+2];}
+  const v=n?sum/n/dt:0;
+  dustVel+=(v-dustVel)*Math.min(1,dt*4);
+  lensSpd+=(clamp(dustVel/300,0,1.4)-lensSpd)*Math.min(1,dt*2.5);
+  lensTight+=(((phase==='race'||phase==='done'||phase==='relive')?1:0)-lensTight)*Math.min(1,dt*1.5);
+  const boosting=(phase==='race'&&playerBoosting);
+  if(boosting&&!wasBoost)boostPunch=1;
+  wasBoost=boosting; boostPunch*=Math.max(0,1-dt*2.4);
+  // THE NOTHING: no grains, no reference. you are doing thirty kilometres a second and it feels like floating.
+  let mT=1;
+  try{if(player&&(phase==='race'||phase==='relive'||phase==='done')&&sectionAt(player.s).name==='THE NOTHING')mT=0.06;}catch(e){}
+  mediumK+=(mT-mediumK)*Math.min(1,dt*0.8);
+  dust.material.opacity=dustOpBase*mediumK;
+  // exposure streaks
+  const shutter=0.016+(boosting?0.008:0);
+  const L=dustVel*shutter;
+  const lx=(player&&player.vx?player.vx:0)*shutter, ly=(player&&player.vy?player.vy:0)*shutter;
+  const sa=streakGeo.attributes.position.array;
+  for(let i=0;i<DUST_N;i++){
+    const x=da[i*3],y=da[i*3+1],z=da[i*3+2];
+    sa[i*6]=x;sa[i*6+1]=y;sa[i*6+2]=z;
+    sa[i*6+3]=x+lx;sa[i*6+4]=y+ly;sa[i*6+5]=z-L;
+  }
+  streakGeo.attributes.position.needsUpdate=true;
+  streakMat.opacity=clamp((dustVel-60)/220,0,1)*0.55*mediumK*(dustOpBase/0.6)*(1-(driftK||0)*0.7);
 }
 tick();
 
@@ -1521,6 +1672,7 @@ window.addEventListener('resize',function(){
   camera.aspect=window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
+  try{if(POST){const sz=renderer.getDrawingBufferSize(_lensV2);postRT.setSize(sz.x,sz.y);}}catch(e){}
 });
 
 // debug hooks (harmless in production)
@@ -1530,6 +1682,7 @@ window.__ML={
   asteroids:asteroids,
   meteors:meteors,
   get seed(){return SEED_HEX;},
+  lens:function(){return {on:POST,k:lensLast.k,blur:lensLast.blur,render:lensLast.render,centre:lensLast.centre,dustVel:dustVel,medium:mediumK};},
   camera:camera,
   heading:function(){return hYaw;},
   verbCharge:function(){return player?(player.charge||0):0;},
