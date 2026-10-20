@@ -1126,7 +1126,7 @@ function dustSpawn(da,i){
 }
 // speed feel — presentation only. nothing here touches the simulation.
 let camBack=0,camBackV=0,camLastSpd=0,camAccS=0;
-let dustPrevZ=null,dustVel=0,mediumK=1,dustOpBase=0.6;
+let dustPrevZ=null,dustVel=0,mediumK=1,dustOpBase=0.6,measT=0,measZ=0;
 let lensSpd=0,lensTight=0,boostPunch=0,wasBoost=false,warpK=0,duckK=0;
 let boostMeter=100;
 
@@ -1449,7 +1449,7 @@ function updateRace(dt){
   placeWorld(p.s);placeRacers(p.s,dt);
   // camera
   shake=Math.max(0,shake-dt*2.2);
-  const sx=(Math.random()-0.5)*(shake*0.9+warpK*0.16)*(1-driftK),sy=(Math.random()-0.5)*(shake*0.9+warpK*0.12)*(1-driftK);
+  const sx=((Math.random()-0.5)*shake*0.9+warpK*0.05*(Math.sin(t*41.3)+0.6*Math.sin(t*67.1+1.7)))*(1-driftK),sy=((Math.random()-0.5)*shake*0.9+warpK*0.04*(Math.sin(t*37.7+0.9)+0.6*Math.sin(t*59.3)))*(1-driftK);   // a rumble, not a shiver
   camYaw+=(hYaw*driftK-camYaw)*Math.min(1,dt*1.5);    // the eye swings after the nose, a beat late
   camPit+=(hPit*driftK-camPit)*Math.min(1,dt*1.5);
   // sit behind the nose and look down it. at heading zero this is the old camera exactly.
@@ -1706,6 +1706,14 @@ function tick(){
     else if(phase==='done')updateDone(dt);
     else if(phase==='relive')updateRelive(dt);
   }
+  // the race steps at a fixed rate; the screen does not. lead the view by the unspent part of a step
+  // so the world flows instead of lurching. undone straight after the frame is drawn.
+  let lead=0;
+  if(phase==='race'&&player){
+    lead=simAcc*(1-(driftK||0));
+    scene.position.z=player.speed*lead;
+    for(let i=0;i<racers.length;i++)racers[i].mesh.position.z-=racers[i].speed*lead;
+  }
   updateSpeedFeel(dt);
   if(POST){
     try{
@@ -1720,7 +1728,7 @@ function tick(){
       const cDeg=clamp(c0-lensTight*(9+lensSpd*6)*wideK,40,110);          // what the middle looks like
       const rDeg=clamp(2*Math.atan(Math.tan(cDeg*Math.PI/360)/(1-kk))*180/Math.PI,cDeg,128);   // how wide we really see
       const blur=clamp((lensSpd*0.03+Math.pow(warpK,1.5)*0.17+boostPunch*0.07)*mediumK*(1-dK),0,0.27);
-      postMat.uniforms.k.value=kk;postMat.uniforms.blur.value=blur;postMat.uniforms.warp.value=warpK;postMat.uniforms.seed.value=(t*7.13)%100;
+      postMat.uniforms.k.value=kk;postMat.uniforms.blur.value=blur;postMat.uniforms.warp.value=warpK;
       lensLast={k:kk,blur:blur,render:rDeg,centre:cDeg};
       camera.fov=rDeg;camera.updateProjectionMatrix();
       // find the craft on the wide frame, and centre the bend on it
@@ -1729,13 +1737,17 @@ function tick(){
         player.mesh.getWorldPosition(_lensV3);_lensV3.project(camera);
         if(_lensV3.z<1)cyT=clamp(_lensV3.y,-0.75,0.3);
       }
-      lensCy+=(cyT-lensCy)*Math.min(1,dt*3);
+      lensCy+=(cyT-lensCy)*Math.min(1,dt*1.8);
       postMat.uniforms.cy.value=lensCy;
       renderer.setRenderTarget(postRT);renderer.render(scene,camera);
       renderer.setRenderTarget(null);renderer.render(postScene,postCam);
       camera.fov=c0;camera.updateProjectionMatrix();
     }catch(e){POST=false;try{renderer.setRenderTarget(null);}catch(e2){}renderer.render(scene,camera);}
   }else renderer.render(scene,camera);
+  if(lead){
+    scene.position.z=0;
+    for(let i=0;i<racers.length;i++)racers[i].mesh.position.z+=racers[i].speed*lead;
+  }
 }
 // ---------------- speed, as it is seen ----------------
 function updateSpeedFeel(dt){
@@ -1745,8 +1757,11 @@ function updateSpeedFeel(dt){
   // measure the medium's actual motion: works in the race, the relive, the arrival, anywhere
   let sum=0,n=0;
   for(let i=0;i<DUST_N;i++){const dz=da[i*3+2]-dustPrevZ[i];if(dz>=0&&dz<240){sum+=dz;n++;}dustPrevZ[i]=da[i*3+2];}
-  const v=n?sum/n/dt:0;
-  dustVel+=(v-dustVel)*Math.min(1,dt*4);
+  measT+=dt; measZ+=(n?sum/n:0);
+  if((measZ>0&&measT>=0.05)||measT>=0.25){
+    dustVel+=(measZ/measT-dustVel)*Math.min(1,measT*4);
+    measT=0; measZ=0;
+  }
   lensSpd+=(clamp(dustVel/300,0,1.4)-lensSpd)*Math.min(1,dt*2.5);
   lensTight+=(((phase==='race'||phase==='done'||phase==='relive')?1:0)-lensTight)*Math.min(1,dt*1.5);
   const boosting=(phase==='race'&&playerBoosting);
