@@ -81,6 +81,11 @@ canvas{display:block}
 #btnBack:hover{color:#e8eaee;border-bottom-color:rgba(232,234,238,.6)}
 
 /* ---- touch boost ---- */
+#btnLeave{position:fixed;top:12px;right:12px;z-index:20;background:none;border:none;cursor:pointer;
+  padding:10px 8px;font-family:inherit;font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+  color:rgba(232,234,238,.3);-webkit-tap-highlight-color:transparent;transition:color .35s ease}
+#btnLeave:hover,#btnLeave:focus-visible{color:rgba(232,234,238,.75);outline:none}
+#btnLeave.arm{color:rgba(232,234,238,.9)}
 #boostBtn{position:fixed;right:18px;bottom:60px;width:88px;height:88px;display:none;align-items:center;
   justify-content:center;border:1px solid rgba(232,234,238,.35);border-radius:50%;font-size:11px;
   letter-spacing:.24em;color:rgba(232,234,238,.85);background:rgba(255,255,255,.04);z-index:5}
@@ -138,6 +143,7 @@ canvas{display:block}
   <div id="resFoot" class="lbl">the constellation — crossing · ringfall · ironlight · behemoth · the well</div>
 </div>
 
+<button id="btnLeave" type="button" aria-label="Leave the race">leave</button>
 <div id="boostBtn">BOOST</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -974,6 +980,23 @@ function cycle(dir){sel=(sel+dir+VEHICLES.length)%VEHICLES.length;showVehicle();
 $('btnPrev').addEventListener('click',function(){initAudio();cycle(-1);});
 $('btnNext').addEventListener('click',function(){initAudio();cycle(1);});
 $('btnLaunch').addEventListener('click',function(){initAudio();confirmPick();});
+// a quiet way out. mid-race it asks once, so a stray thumb at warp can't end a run.
+(function(){
+  const b=$('btnLeave'); if(!b)return;
+  let armedAt=0,resetT=null;
+  function leave(){window.location.href=RETURN_URL;}
+  function ask(){
+    if(phase!=='count'&&phase!=='race'){leave();return;}
+    const now=Date.now();
+    if(armedAt&&now-armedAt<2600){leave();return;}
+    armedAt=now; b.textContent='leave the race? again'; b.classList.add('arm');
+    clearTimeout(resetT);
+    resetT=setTimeout(function(){armedAt=0;b.textContent='leave';b.classList.remove('arm');},2600);
+  }
+  b.addEventListener('pointerdown',function(e){e.stopPropagation();});
+  b.addEventListener('click',function(e){e.stopPropagation();ask();});
+  window.addEventListener('keydown',function(e){if(e.code==='Escape')ask();});
+})();
 $('btnAgain').addEventListener('click',function(){window.location.reload();});
 $('btnRelive').addEventListener('click',function(){startRelive();});
 $('fieldNote').textContent='field note — the behemoth survives because its star is too gentle to blow it away. some things persist only where the weather is kind.';
@@ -1441,6 +1464,7 @@ function updateDone(dt){
   hudEl.style.opacity=String(Math.max(0,1-doneT*0.8));
   if(!resShown&&doneT>3.0){
     resShown=true;
+    try{$('btnLeave').style.display='none';}catch(e){}
     try{const bk0=$('btnBack');
       if(bk0&&!backSet){bk0.href=RETURN_URL;bk0.style.display='inline-block';}}catch(e){}
     const place=finishOrder.indexOf(p)+1;
