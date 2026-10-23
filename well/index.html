@@ -235,6 +235,7 @@ function makeFlame(r,len,color){
   m.rotation.x=Math.PI/2; // apex points +z (astern)
   const core=new THREE.Mesh(new THREE.ConeGeometry(r*0.45,len*0.82,10),matGlow(0xfff6e6,0.9));
   core.position.y=len*0.05; m.add(core);   // the burn has a heart
+  m.userData.flame=true; core.userData.flame=true;
   return m;
 }
 
@@ -1080,6 +1081,10 @@ function placeRacers(viewS,dt){
     const n=clamp(r.speed/r.def.top,0,1);
     const dsec=sectionAt(r.s);
     if(r.mesh.userData.anim)r.mesh.userData.anim(dt,{n:n,speed:r.speed,boost:(r===player?(playerBoosting):(r.boostT>0)),den:(dsec.den!==undefined?dsec.den:0.5)});
+    if(r===player&&phase==='done'){            // over the line, the engines shut down
+      const ek=clamp(1-doneT/1.4,0,1);
+      r.mesh.traverse(function(o){if(o.userData&&o.userData.flame){o.visible=ek>0.03;if(o.material)o.material.opacity*=ek;o.scale.y*=0.4+0.6*ek;}});
+    }
   }
 }
 let playerBoosting=false;
