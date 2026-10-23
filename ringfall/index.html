@@ -1390,7 +1390,7 @@ function updateRace(dt){
   hudEl.style.opacity=String(1-driftK*0.92);
   hudPos.style.opacity=String(1-driftK*0.95);
   if(driftGain)driftGain.gain.value=driftK*0.017;
-  setEngine((p.speed/330,0,1),playerBoosting,clamp(p.speed/330,0,1)*(1-driftK*0.97),playerBoosting,sec.name==='THE SHADOW');
+  setEngine(clamp(p.speed/330,0,1)*(1-driftK*0.97),playerBoosting,sec.name==='THE SHADOW');
   // the race can end without you. that is allowed to be a fact, not a failure.
   if(driftOn&&!raceWentOn&&racers.every(function(r){return r===player||r.finished;})){
     raceWentOn=true;
