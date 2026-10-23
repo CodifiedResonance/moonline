@@ -1,6 +1,6 @@
 # moonline
 
-Five races. One intensement — a re-feel of the forces at play in the universe:
+Five crossings. One intensement — a re-feel of the forces at play in the universe:
 impact, light, heat, current, gravity. The science is the antagonist.
 
 MOONLINE emerges through **The Last Platform**, the fifth world of
@@ -24,7 +24,7 @@ MOONLINE emerges through **The Last Platform**, the fifth world of
 
 The game works out the current week for itself and builds every world from it —
 no server, nothing published, nothing to maintain. Everyone who opens MOONLINE
-in a given week is racing the identical universe, automatically, and every seven
+in a given week is crossing the identical universe, automatically, and every seven
 Earth days it becomes a new one. The grid names it: `universe 31786 · this week's`.
 
 A specific universe can be visited directly with `?seed=` — for example
@@ -37,7 +37,7 @@ crossed — the seed, and your hands tick by tick. It is held on your own device
 yours to keep or to hand to another witness. Nothing is sent anywhere. There is
 no account, no ladder, no season.
 
-Because a race is built from its seed and computed at a fixed rate, the same
+Because a crossing is built from its seed and computed at a fixed rate, the same
 seed and the same inputs reproduce the same crossing exactly, on any machine.
 A line is not believed. It is re-run, and witnessed.
 

@@ -63,8 +63,21 @@ canvas{display:block}
 
 /* ---- results ---- */
 #results{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
-  background:rgba(3,4,8,.55);backdrop-filter:blur(2px);text-align:center;padding:20px}
-#resTitle{font-size:46px;font-weight:600;letter-spacing:.3em;margin-bottom:8px}
+  background:radial-gradient(ellipse at center,rgba(3,4,8,.66) 0%,rgba(3,4,8,.3) 62%,rgba(3,4,8,.12) 100%);text-align:center;padding:20px}
+#resTitle{font-size:19px;font-weight:400;letter-spacing:.05em;line-height:1.65;max-width:640px;
+  margin-bottom:16px;padding:0 14px;text-shadow:0 0 22px rgba(3,4,8,.95)}
+#resTitle b{font-weight:600;color:#fff}
+.uSay{font-size:11px;letter-spacing:.16em;line-height:1.8;color:rgba(232,234,238,.55);margin:0 auto 24px;max-width:520px}
+.uExp{font-size:12px;letter-spacing:.14em;line-height:1.8;color:rgba(232,234,238,.82)}
+.uLine{font-size:11px;letter-spacing:.14em;color:rgba(232,234,238,.42);margin-top:8px}
+#resList{display:none!important}
+#results.arrive>*{opacity:0;animation:resIn 1.8s ease forwards}
+#results.arrive>#resTitle{animation-delay:.1s}
+#results.arrive>#resSub{animation-delay:1.8s}
+#results.arrive>#fieldNote{animation-delay:2.6s}
+#results.arrive>#btnRelive,#results.arrive>#btnAgain,#results.arrive>#btnBack,#results.arrive>#resFoot{animation-delay:3.2s}
+@keyframes resIn{from{opacity:0}to{opacity:1}}
+@media (max-width:520px){#resTitle{font-size:16px}}
 #resSub{font-size:12px;letter-spacing:.14em;color:rgba(232,234,238,.75);margin-bottom:26px}
 #relLbl{position:fixed;bottom:26px;left:0;right:0;text-align:center;display:none;
   font-size:10px;letter-spacing:.3em;color:rgba(232,234,238,.55)}
@@ -116,7 +129,7 @@ canvas{display:block}
 <div id="gridUI">
   <div id="gTop">
     <div id="gTitle" class="lbl">moonline · track 04 — the behemoth</div>
-    <div id="gSub">You arrive inside the breath of a planet. You are already on the start line.<br/>Destination: where the breath ends.</div>
+    <div id="gSub">You arrive inside the breath of a planet. The crossing has already begun.<br/>Destination: where the breath ends.</div>
   </div>
   <div id="gCard">
     <div id="gRow">
@@ -131,7 +144,7 @@ canvas{display:block}
       <button class="nav" id="btnNext">›</button>
     </div>
     <button id="btnLaunch">LAUNCH</button>
-    <div id="gHint" class="lbl">choose your lane · then you race</div>
+    <div id="gHint" class="lbl">choose your lane · then you cross</div>
   </div>
 </div>
 
@@ -147,7 +160,7 @@ canvas{display:block}
   <div id="resFoot" class="lbl">next — the well</div>
 </div>
 
-<button id="btnLeave" type="button" aria-label="Leave the race">leave</button>
+<button id="btnLeave" type="button" aria-label="Leave the crossing">leave</button>
 <div id="boostBtn">BOOST</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -994,7 +1007,7 @@ $('btnLaunch').addEventListener('click',function(){initAudio();confirmPick();});
     if(phase!=='count'&&phase!=='race'){leave();return;}
     const now=Date.now();
     if(armedAt&&now-armedAt<2600){leave();return;}
-    armedAt=now; b.textContent='leave the race? again'; b.classList.add('arm');
+    armedAt=now; b.textContent='leave the crossing? again'; b.classList.add('arm');
     clearTimeout(resetT);
     resetT=setTimeout(function(){armedAt=0;b.textContent='leave';b.classList.remove('arm');},2600);
   }
@@ -1004,7 +1017,7 @@ $('btnLaunch').addEventListener('click',function(){initAudio();confirmPick();});
 })();
 $('btnAgain').addEventListener('click',function(){window.location.reload();});
 $('btnRelive').addEventListener('click',function(){startRelive();});
-$('fieldNote').textContent='field note — the behemoth survives because its star is too gentle to blow it away. some things persist only where the weather is kind.';
+$('fieldNote').innerHTML='hydrogen escape: 10\u2078\u201310\u2079 grams a second \u00b7 Ehrenreich et al., Nature, 2015';
 showVehicle();
 
 // ------------------------------------------------------------ state
@@ -1115,7 +1128,7 @@ function updateCount(dt){
   if(step!==cdStep){
     cdStep=step;
     if(step<3){cdEl.textContent=String(3-step);blip(430+step*60,0.1,0.14);}
-    else{cdEl.textContent='GO';blip(880,0.2,0.18);phase='race';raceT=0;}
+    else{cdEl.textContent='CROSS';blip(880,0.2,0.18);phase='race';raceT=0;}
   }
   camera.position.set(player.x*0.55,4.6,16);
   camera.lookAt(player.x*0.8,1,-60);
@@ -1407,7 +1420,7 @@ function updateRace(dt){
   // the race can end without you. that is allowed to be a fact, not a failure.
   if(driftOn&&!raceWentOn&&racers.every(function(r){return r===player||r.finished;})){
     raceWentOn=true;
-    annEl.textContent='the race has ended without you';
+    annEl.textContent='the others have crossed without you';
     annEl.classList.add('show');annT=-4;
   }
   // section announce + quiet hud
@@ -1429,7 +1442,7 @@ function updateRace(dt){
     const o=racers[i];if(o===p)continue;
     if(o.finished||o.s>p.s)rank++;
   }
-  hudPos.textContent=['1ST','2ND','3RD','4TH'][rank-1];
+  hudPos.textContent=fmtTime(raceT);   // how long you have been exposed to this world
   const km=Math.max(0,(FINISH-p.s)/FINISH*15000000);
   hudDist.textContent='BREATH '+Math.round(km).toLocaleString('en-GB')+' KM';
   hudSpd.textContent=(p.speed*0.105).toFixed(1)+' KM/S';
@@ -1449,7 +1462,8 @@ function updateRace(dt){
 function updateDone(dt){
   raceT+=dt;doneT+=dt;
   const p=player;
-  p.speed=lerp(p.speed,55,Math.min(1,dt*0.8));
+  // engines off where the breath thins: what little gas is left drags at you, barely.
+  p.speed*=(1-0.1*dt);
   p.s+=p.speed*dt;
   p.mesh.rotation.z*=0.95;p.mesh.rotation.x*=0.95;
   for(let i=0;i<racers.length;i++)if(racers[i]!==p)updateRival(racers[i],dt);
@@ -1459,7 +1473,7 @@ function updateDone(dt){
   const lookY=lerp(1,20,Math.min(1,doneT*0.25));
   camera.lookAt(p.x*0.4,lookY,-400);
   camera.fov=lerp(camera.fov,60,dt*1.5);camera.updateProjectionMatrix();
-  setEngine(0.15,false,true);
+  // the engine is off. its hum decays below and is not re-lit.
   lightLevel+=(0.42-lightLevel)*Math.min(1,dt);
   warmLvl+=(0.5-warmLvl)*Math.min(1,dt);
   ambientL.intensity=0.9*lightLevel;warmL.intensity=1.1*warmLvl;sun.intensity=1.2*lightLevel;
@@ -1476,26 +1490,16 @@ function updateDone(dt){
     try{$('btnLeave').style.display='none';}catch(e){}
     try{const bk0=$('btnBack');
       if(bk0&&!backSet){bk0.href=RETURN_URL;bk0.style.display='inline-block';}}catch(e){}
-    const place=finishOrder.indexOf(p)+1;
-    resTitle.textContent=['FIRST','SECOND','THIRD','FOURTH'][place-1];
-    resSub.textContent=fmtTime(p.fTime)+' — '+(place===1?'The breath lets you go.':'The breath lets you go anyway.');
+    // the universe speaks first, about you. then how long you were in it. no placing: it isn't a race.
     if(splitIdx>=0)splits[SECTIONS[splitIdx].name]=p.fTime-splitMark;
-    (function(){const prev=loadSplits();let sT='';
-      for(let i=0;i<SECTIONS.length;i++){
-        const nm=SECTIONS[i].name,v=splits[nm];
-        if(v===undefined)continue;
-        let d='';
-        if(prev&&prev[nm]!==undefined){const g=v-prev[nm];
-          d=' <span style="opacity:.6">'+(g>=0?'+':'\u2212')+Math.abs(g).toFixed(1)+'</span>';}
-        sT+='<div style="display:flex;justify-content:space-between;max-width:280px;margin:0 auto">'+
-          '<span style="opacity:.6">'+nm.toLowerCase()+'</span><span>'+fmtTime(v)+d+'</span></div>';
-      }
-      resSub.innerHTML+='<div style="margin-top:14px;font-size:11px;letter-spacing:.1em;line-height:1.9">'+sT+'</div>';
-    })();
-
+    const T=p.fTime;
+    const tn=function(x){if(x>=100){const q=Math.pow(10,Math.floor(Math.log10(x))-1);x=Math.round(x/q)*q;}return Math.max(1,Math.round(x)).toLocaleString('en-GB');};   // two figures: the rates are not known better than that
+    const mt=function(x){return x>=1e6?(x/1e6).toFixed(1)+' million':tn(x);};
+    resTitle.innerHTML='While you crossed, GJ 436b breathed out between <b>'+mt(T*100)+' and '+mt(T*1000)+' tonnes</b> of hydrogen.';
+    resSub.innerHTML='<div class="uSay">its star is too gentle to take the rest. it will keep almost all of its sky.</div><div class="uExp">'+fmtTime(T)+' inside an exhaled sky \u00b7 the breath lets you go.'+'</div>';
     (function(){const m=p.fTime;const sl=loadLine();
-      if(sl===null||m<sl){saveLine(m);saveSplits(splits);resSub.innerHTML+='<br/><span style="opacity:.5;font-size:11px;letter-spacing:.14em">a new standing line</span>';}
-      else{resSub.innerHTML+='<br/><span style="opacity:.5;font-size:11px;letter-spacing:.14em">standing line '+fmtTime(sl)+'</span>';}
+      if(sl===null||m<sl){saveLine(m);saveSplits(splits);resSub.innerHTML+='<div class="uLine">a new standing line</div>';}
+      else{resSub.innerHTML+='<div class="uLine">standing line '+fmtTime(sl)+'</div>';}
       try{
         // if we are inside the page, tell it directly
         if(window.parent&&window.parent!==window)window.parent.postMessage({moonline:'crossed',track:TRACK_KEY},'*');
@@ -1504,10 +1508,12 @@ function updateDone(dt){
         if(bk){backSet=true;bk.href=RETURN_URL+'?crossed='+encodeURIComponent(TRACK_KEY);bk.style.display='inline-block';}
       }catch(e){}
     })();
+    results.classList.add('arrive');
+    annEl.classList.remove('show');   // the place names have said their piece
     results.style.display='flex';
     boostBtn.style.display='none';
   }
-  if(resShown)renderResultsList();
+  // the field is not ranked here. the others are still crossing, somewhere behind you.
 }
 
 
@@ -1720,9 +1726,10 @@ function updateSpeedFeel(dt){
   warpK+=(wT-warpK)*Math.min(1,dt*(wT>warpK?2.2:1.2));
   duckK=Math.max(0,duckK-dt*2.6);
   if(actx&&tearGain){
-    tearGain.gain.value=(warpK*warpK*0.075+boostPunch*0.03)*(1-duckK*0.8);
+    const arrQ=(phase==='done'?clamp(1-doneT/1.8,0,1):1);   // engines off: the tearing falls away
+    tearGain.gain.value=(warpK*warpK*0.075+boostPunch*0.03)*(1-duckK*0.8)*arrQ;
     tearFilt.frequency.value=1800+warpK*3600;
-    subGain.gain.value=warpK*0.06*(1-duckK*0.5);
+    subGain.gain.value=warpK*0.06*(1-duckK*0.5)*arrQ;
     subOsc.frequency.value=28+warpK*9;
   }
   // exposure streaks
