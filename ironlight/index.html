@@ -27,6 +27,9 @@ canvas{display:block}
 #heatWrap{margin-top:5px;width:150px;height:2px;background:rgba(255,178,102,.14)}
 #heatFill{height:2px;width:0%;background:#ffb266;transition:width .05s linear}
 #heatFill.over{background:#ff6a3d}
+#vTraits{font-size:9px;letter-spacing:.22em;color:#ffb266;margin:0 0 8px;min-height:12px}
+#vHow{font-size:10px;line-height:1.6;color:rgba(232,234,238,.5);margin:0 0 12px;min-height:32px}
+#vbLabel{font-size:9px;letter-spacing:.2em;color:rgba(232,234,238,.42);margin-top:5px}
 #hintKeys{position:absolute;right:18px;bottom:22px;text-align:right}
 
 #announce{position:fixed;top:16%;width:100%;text-align:center;letter-spacing:.55em;font-size:14px;
@@ -104,6 +107,7 @@ canvas{display:block}
     <div id="hudSpd">0.0 KM/S</div>
     <div id="boostWrap"><div id="boostFill"></div></div>
     <div id="heatWrap"><div id="heatFill"></div></div>
+    <div id="vbLabel"></div>
   </div>
   <div id="hintKeys" class="lbl">arrows / wasd steer · shift boost</div>
 </div>
@@ -124,6 +128,8 @@ canvas{display:block}
       <div id="gMid">
         <div id="vName"></div>
         <div id="vLine"></div>
+        <div id="vTraits"></div>
+        <div id="vHow"></div>
         <div class="bar"><span class="lbl">top speed</span><i><b id="bTop"></b></i></div>
         <div class="bar"><span class="lbl">acceleration</span><i><b id="bAcc"></b></i></div>
         <div class="bar"><span class="lbl">handling</span><i><b id="bHan"></b></i></div>
@@ -731,6 +737,7 @@ function spawnPlume(playerS){
   sp.mesh.visible=true;
   plumes.push(sp);
 }
+let nearAcc=0;   // mass, close by
 let astAcc=0,plmAcc=0,heat=0,glareLvl=0,lightLevel=0.30,warmLvl=0.35,windDir=(Math.random()<0.5?-1:1),windX=0;
 
 // ------------------------------------------------------------ audio (Web Audio, gesture-gated)
@@ -970,6 +977,19 @@ function showVehicle(){
   const d=VEHICLES[sel];
   vName.textContent=d.name;
   vLine.textContent=d.line;
+  // each machine, as it meets this world
+  const TRAITS={
+    ship:'VIOLENT THRUST \u00b7 ONE HEAT BUDGET \u00b7 BURNS FREE IN THE DARK',
+    pendulum:'HEAVY AT THE POLE \u00b7 HEAT SLOWS THE SWING',
+    sail:'OVERFED \u00b7 SCORCHES IF PINNED \u00b7 FASTEST HERE',
+    trawler:'RICHEST FEED \u00b7 RUNS HOT \u00b7 GORGES ON PLUMES'};
+  const HOWTO={
+    ship:'Hold the burn \u2014 it escalates the longer you commit. Here the reactor and the planet share one heat. The nightside burns almost free; on the day side the rock throws heat back.',
+    pendulum:'Hold to wind where time runs heavy. Heat lengthens a pendulum, and a long pendulum swings slow: in the furnace the winding slips. Wind cool, spend hot.',
+    sail:'Hold to trim. This star is too much: a sail held full heats, and held too hot it scorches for good. Ease it \u2014 let it luff, let it cool, fill it again.',
+    trawler:'Hold to open the scoop. The escaping sky is the richest food anywhere, the plumes richest of all, and everything you swallow is scalding.'};
+  $('vTraits').textContent=TRAITS[d.key]||'';
+  $('vHow').textContent=HOWTO[d.key]||'';
   bTop.style.width=Math.round(d.top/360*100)+'%';
   bAcc.style.width=Math.round(d.accel/70*100)+'%';
   bHan.style.width=Math.round(d.steer/32*100)+'%';
@@ -1180,6 +1200,7 @@ function updateHazards(dt,viewS){
       const lo=(player.prevS!==undefined?player.prevS:player.s)-4;
       if(sp.s>=lo&&sp.s<=player.s+4&&Math.abs(sp.x-player.x)<4.2){
         heat=Math.min(HEAT_MAX,heat+10);       // a plume does not break a hull. it scalds it.
+        if(player.scoop){player.charge=Math.min(100,(player.charge||0)+16);heat=Math.min(HEAT_MAX,heat+4);}   // and an open scoop gorges on it
         player.speed*=0.97;player.plumeCD=0.5;shake=Math.max(shake,0.35);
         blip(190,0.16,0.1);
       }
@@ -1199,6 +1220,7 @@ function collide(o){
   if(o.s<lo||o.s>player.s+4)return;
   const dx=o.x-player.x,dy=o.y-player.y,rr=o.r+player.def.radius;
   const d2=dx*dx+dy*dy;
+  if(d2<rr*rr*22){const near=1-Math.sqrt(d2)/(rr*4.7);if(near>0)nearAcc+=near*(o.r?clamp(o.r/2.0,0.35,1.7):0.5);}
   if(d2<rr*rr)hitPlayer(o);
   else if(!o.whooshed&&d2<rr*rr*14){o.whooshed=true;whoosh(dx,1-Math.sqrt(d2/(rr*rr*14)),player.speed);}   // heard as it goes by
 }
@@ -1250,14 +1272,81 @@ function updateRace(dt){
   p.speed*=(1-Math.abs(p.vx||0)/Math.max(1,p.def.steer*1.42)*0.055*dt);   // carrying sideways speed costs forward speed                     // hard steering scrubs speed. choose a line.
   // boost
   const want=boostHeld();
-  if(want&&boostMeter>0){playerBoosting=true;boostMeter=Math.max(0,boostMeter-33*dt);}
-  else{playerBoosting=false;
-    const cleanFor=raceT-(p.lastHit===undefined?-99:p.lastHit);
-    boostMeter=Math.min(100,boostMeter+(cleanFor>4?8:3.5)*dt);   // clean flying feeds the tank
+  // ---------------------------------------------- THE VERB, in the hottest known orbit
+  // One gesture, four machines. The planet's heat is everyone's; only VECTOR's reactor joins it.
+  const VK=p.def.key, secV=sectionAt(p.s), nearK=(p.nearK||0);
+  const hotSide=(secV.heatR||0)>0;
+  let thrustMul=1;
+  playerBoosting=false; p.steerMul=1; p.heatAdd=0; p.scoop=false;
+  if(p.charge===undefined){p.charge=(VK==='ship'?0:35);p.burnT=0;p.cut=0;p.bank=0;}
+
+  if(VK==='ship'){
+    // VECTOR BURNS. The reactor and the planet share one heat here.
+    // The nightside soaks the burn up; on the day side the rock throws heat back at you.
+    if(p.cut>0){p.cut-=dt;p.burnT=0;thrustMul=0.82;p.heatAdd=-3;}
+    else if(want){
+      p.burnT+=dt; playerBoosting=true;
+      thrustMul=1+Math.min(p.burnT/3.4,1)*0.52;          // commit to the long line
+      p.heatAdd=10+(hotSide?nearK*7:-nearK*9);
+      if(heat>=HEAT_MAX-1){p.cut=2.5;p.burnT=0;reactorCut();
+        annEl.textContent='reactor cut';annEl.classList.add('show');annT=-1;}
+    }else{p.burnT=0;p.heatAdd=(hotSide?nearK*4:-(4+nearK*12));}
+    p.charge=Math.min(p.burnT/3.4,1)*100;               // the meter shows how deep into the burn you are
   }
+  else if(VK==='sail'){
+    // CARAVEL is overfed. A sail held full in this light heats; let it luff and it sheds the heat.
+    // Held too hot for too long it scorches, and a scorched sail stays scorched. Ease it; don't pin it.
+    const lit=clamp(lightLevel,0.2,1.3);
+    const align=clamp(lit*(0.82+0.42*dir.x)-nearK*0.95,-0.6,1.4);   // a held sail swings to the star; lean left to spill it
+    if(want){
+      playerBoosting=align>0.3;
+      p.sailT=clamp((p.sailT||0)+(align*lit-0.5)*0.42*dt,0,1);             // the sail takes the light as heat
+      if(p.sailT>0.68)p.sailBurn=Math.min(0.55,(p.sailBurn||0)+(p.sailT-0.68)*0.55*dt);   // past its limit it scorches, for good
+      thrustMul=1+align*0.42*(1-(p.sailBurn||0));
+      p.steerMul=0.42;                                    // a full sail will not let you turn
+      p.charge=clamp(p.charge+(align*30*(1-(p.sailBurn||0))-7)*dt,0,100);
+      p.x-=align*1.45*dt;                                 // light pushes where light goes
+      p.heatAdd=2+(p.sailT||0)*6;                         // and a hot sail warms the hull
+    }else{p.charge=Math.max(0,p.charge-8*dt);p.sailT=Math.max(0,(p.sailT||0)-0.55*dt);}   // luffing, it sheds heat
+    thrustMul*=1+(p.charge/100)*0.16;
+    if(heat>100)thrustMul*=1-0.18*clamp((heat-100)/30,0,1);   // a cooked sail sags
+  }
+  else if(VK==='trawler'){
+    // TRAWLER FEEDS on an atmosphere being boiled away: the richest food in the game. And it is scalding.
+    const den=(secV.den!==undefined?secV.den:0.4)+nearK*0.85;
+    if(want){
+      p.scoop=true;
+      playerBoosting=den>0.55;
+      p.charge=clamp(p.charge+(den*44-15)*dt,0,100);
+      thrustMul=1+(den-0.5)*0.4;
+      p.steerMul=0.7;
+      p.heatAdd=den*9;                                    // fat and hot
+      if(heat>100){p.charge=Math.max(0,p.charge-26*dt);thrustMul*=0.84;}   // hot gas chokes the intake: the hold boils off and the scoop drags
+    }else{p.charge=Math.max(0,p.charge-4.5*dt);}
+    thrustMul*=1+(p.charge/100)*0.28;
+  }
+  else{
+    // PENDULUM LOADS where time runs heavy. Heat lengthens a pendulum and cold shortens it, and
+    // a long pendulum swings slow: in the furnace the winding slips; on the nightside it bites.
+    const grip=clamp(1.35-heat/HEAT_MAX*1.0,0.4,1.35);   // cold, the pendulum is short and quick: it grips. hot, it is long and slips.
+    const heavy=clamp(((1-(secV.dil!==undefined?secV.dil:1))*1.5+nearK*0.95)*grip,0,1.4);
+    if(want){
+      p.bank=clamp(p.bank+(heavy*42-3.2)*dt,0,100);
+      thrustMul=0.97;
+      p.steerMul=0.62;
+    }else if(p.bank>0){
+      const spend=Math.min(p.bank,22*dt);
+      p.bank-=spend; playerBoosting=true;
+      thrustMul=1+0.34*(spend/Math.max(1e-6,22*dt));
+      p.heatAdd=3;                                        // the escapement runs warm
+    }
+    p.charge=p.bank;
+  }
+  thrustMul=clamp(thrustMul,0.8,1.34);   // every machine answers to the same ceiling
+  boostMeter=p.charge;
   // speed — heat derates the machine. that is what heat does.
   const derate=1-0.22*clamp((heat-100)/30,0,1);
-  const cap=p.def.top*(playerBoosting?1.3:1)*derate;
+  const cap=p.def.top*thrustMul*derate;
   const pAcc=p.def.accel*mediumMul(p.def,sectionAt(p.s));
   if(p.speed<cap)p.speed=Math.min(cap,p.speed+pAcc*(playerBoosting?2:1)*dt);
   else p.speed+=(cap-p.speed)*Math.min(1,dt*3);
@@ -1315,8 +1404,9 @@ function updateRace(dt){
   if(p.plumeCD===undefined)p.plumeCD=0;
   if(p.plumeCD>0)p.plumeCD-=dt;
   updateHazards(dt,p.s);
+  p.nearK=clamp(nearAcc,0,1.5); nearAcc=0;    // mass, close by. every machine reads it differently.
   // heat: exposure is time. speed is a cooling strategy. boost is a debt.
-  heat=clamp(heat+(secNow.heatR+(playerBoosting?9:0))*dt,0,HEAT_MAX);
+  heat=clamp(heat+(secNow.heatR+(p.heatAdd||0))*dt,0,HEAT_MAX);
   // the terminator wind — day and night trading atmospheres at speed
   windX=(secNow.wind||0)*windDir*(0.55+0.45*Math.sin(t*0.8));
   p.x=clamp(p.x+windX*dt,-140,140);
@@ -1418,6 +1508,12 @@ function updateRace(dt){
   hudDist.textContent='TAIL '+Math.round(km).toLocaleString('en-GB')+' KM';
   hudSpd.textContent=(p.speed*0.105).toFixed(1)+' KM/S';
   boostFill.style.width=boostMeter+'%';
+  {const VBL={ship:'BURN',pendulum:'WOUND',sail:'SAIL',trawler:'HOLD'};
+   let vbx=(p.cut>0?' \u2014 REACTOR CUT':'');
+   if(p.def.key==='sail'){if((p.sailT||0)>0.68)vbx=' \u2014 SCORCHING';else if((p.sailT||0)>0.5)vbx=' \u2014 HOT';
+     if((p.sailBurn||0)>0.05)vbx+=' \u00b7 SCORCHED '+Math.round(p.sailBurn*100)+'%';}
+   if(p.def.key==='trawler'&&heat>100&&p.scoop)vbx=' \u2014 CHOKING';
+   $('vbLabel').textContent=(VBL[p.def.key]||'')+vbx;}
   heatFill.style.width=(heat/HEAT_MAX*100)+'%';
   heatFill.classList.toggle('over',heat>100);
   // record, for the re-living
