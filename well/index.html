@@ -24,6 +24,9 @@ canvas{display:block}
 #hudSpd{font-size:15px;letter-spacing:.14em}
 #boostWrap{margin-top:8px;width:150px;height:2px;background:rgba(232,234,238,.14)}
 #boostFill{height:2px;width:100%;background:#e8eaee;transition:width .05s linear}
+#vTraits{font-size:9px;letter-spacing:.22em;color:#9fc3ff;margin:0 0 8px;min-height:12px}
+#vHow{font-size:10px;line-height:1.6;color:rgba(232,234,238,.5);margin:0 0 12px;min-height:32px}
+#vbLabel{font-size:9px;letter-spacing:.2em;color:rgba(232,234,238,.42);margin-top:5px}
 #heatWrap{display:none;margin-top:5px;width:150px;height:2px;background:rgba(255,178,102,.14)}
 #heatFill{height:2px;width:0%;background:#ffb266;transition:width .05s linear}
 #heatFill.over{background:#ff6a3d}
@@ -130,15 +133,17 @@ canvas{display:block}
 #lbT{top:0}#lbB{bottom:0}
 body.cine #lbT,body.cine #lbB{height:10.5vh}
 #results{z-index:6}#relLbl{z-index:6}
+#hudGhost{font-size:10px;letter-spacing:.2em;color:rgba(191,227,255,.62);margin-left:14px}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
 <body>
 <div id="hud">
-  <div id="hudTop"><span id="hudPos">—</span><span id="hudDist"></span></div>
+  <div id="hudTop"><span id="hudPos">—</span><span id="hudDist"></span><span id="hudGhost"></span></div>
   <div id="hudBot">
     <div id="hudSpd">0.0 KM/S</div>
     <div id="boostWrap"><div id="boostFill"></div></div>
+    <div id="vbLabel"></div>
     <div id="heatWrap"><div id="heatFill"></div></div>
   </div>
   <div id="hintKeys" class="lbl">arrows / wasd steer · shift boost</div>
@@ -162,6 +167,8 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
       <div id="gMid">
         <div id="vName"></div>
         <div id="vLine"></div>
+        <div id="vTraits"></div>
+        <div id="vHow"></div>
         <div class="bar"><span class="lbl">top speed</span><i><b id="bTop"></b></i></div>
         <div class="bar"><span class="lbl">acceleration</span><i><b id="bAcc"></b></i></div>
         <div class="bar"><span class="lbl">handling</span><i><b id="bHan"></b></i></div>
@@ -1117,6 +1124,11 @@ function showVehicle(){
   vName.textContent=d.name;
   try{$('gNextLbl').textContent='next \u00b7 '+VEHICLES[(sel+1)%VEHICLES.length].name;}catch(e){}
   vLine.textContent=d.line;
+  // each machine, as it meets this world
+  const TRAITS={ship:'VIOLENT THRUST \u00b7 OBERTH IN THE SLING',pendulum:'HOME \u00b7 WINDS DEEP \u00b7 SPENDS ON THE CLIMB',sail:'RIDES THE BRIGHT SIDE OF THE DISK',trawler:'FEEDS ON THE DISK \u00b7 WHAT IT SWALLOWS, IT CARRIES'};
+  const HOWTO={ship:'Hold the burn. A burn deep in the well, at speed, is worth more than the same burn out here. The Sling is where VECTOR commits.',pendulum:'Hold to wind. Nowhere is time heavier than the deep line through the Sling. Bring it up wound, and spend it on the climb.',sail:'Hold to trim. The side of the disk turning toward you burns brighter \u2014 ride it. Its light shoves you off it.',trawler:'Hold to open the scoop. The disk is rich, but every tonne you take stays aboard \u2014 it is fuel and it is weight, and it weighs most on the climb.'};
+  $('vTraits').textContent=TRAITS[d.key]||'';
+  $('vHow').textContent=HOWTO[d.key]||'';
   bTop.style.width=Math.round(d.top/360*100)+'%';
   bAcc.style.width=Math.round(d.accel/70*100)+'%';
   bHan.style.width=Math.round(d.steer/32*100)+'%';
@@ -1183,6 +1195,7 @@ function confirmPick(){
   RNG=mulberry32(SEED);                            // from here, the universe is the seed's
   windDir=(rand(0,1)<0.5?-1:1);windPhase=rand(0,6);
   recBuf.length=0;inpBuf.length=0;
+  ghostRec=[];ghostTick=0;ghostPtr=0;ghostGap=null;buildGhost();
   for(let i=0;i<racers.length;i++){const r=racers[i];
     r.weavePhase=rand(0,6.28);r.nextBoost=rand(8,16);
     if(r.nerve!==undefined)r.nerve=rand(0,1);
@@ -1218,6 +1231,7 @@ function placeWorld(viewS,dt){
   galaxy.rotation.z+=0.00004;
 }
 function placeRacers(viewS,dt){
+  try{placeGhost(viewS);}catch(e){}
   for(let i=0;i<racers.length;i++){
     const r=racers[i];
     r.mesh.position.set(r.x,r.y,-(r.s-viewS));
@@ -1408,6 +1422,7 @@ function updateHazards(dt,viewS){
     if(Math.abs(w.x)>60||w.s<viewS-40){w.mesh.visible=false;wsFree.push(w);wstreaks.splice(i,1);}
   }
 }
+let nearAcc=0;   // mass, close by. every machine reads it differently.
 function collide(o){
   if(!player||player.inv>0||player.finished)return;
   // swept along s: hit if the object sits anywhere in the span crossed this frame
@@ -1415,6 +1430,7 @@ function collide(o){
   if(o.s<lo||o.s>player.s+4)return;
   const dx=o.x-player.x,dy=o.y-player.y,rr=o.r+player.def.radius;
   const d2=dx*dx+dy*dy;
+  if(d2<rr*rr*22){const near=1-Math.sqrt(d2)/(rr*4.7);if(near>0)nearAcc+=near*(o.r?clamp(o.r/2.0,0.35,1.7):0.5);}
   if(d2<rr*rr)hitPlayer(o);
   else if(!o.whooshed&&d2<rr*rr*14){o.whooshed=true;whoosh(dx,1-Math.sqrt(d2/(rr*rr*14)),player.speed);}   // heard as it goes by
 }
@@ -1437,6 +1453,9 @@ function fmtTime(s){
   const m=Math.floor(s/60),r=(s-m*60);
   return m+':'+(r<10?'0':'')+r.toFixed(1);
 }
+setTimeout(function(){try{const g0=loadGhost();if(g0){const gs=$('gSub');
+  const gm=(VEHICLES.filter(function(v){return v.key===g0.m;})[0]||{}).name||'';
+  if(gs)gs.innerHTML+='<br/><span style="opacity:.6;color:#bfe3ff">your line in this universe \u2014 '+fmtTime(g0.t)+(gm?' \u00b7 '+gm:'')+'. it will fly with you.</span>';}}catch(e){}},0);   // after the script has defined your line
 (function(){try{const sl=loadLine();if(sl!==null){
   const g=$('gSub');if(g)g.innerHTML+='<br/><span style="opacity:.5">your standing line — '+fmtTime(sl)+'</span>';
 }}catch(e){}})();
@@ -1466,14 +1485,64 @@ function updateRace(dt){
   p.speed*=(1-Math.abs(dir.x)*0.05*dt);                     // hard steering scrubs speed. choose a line.
   // boost
   const want=boostHeld();
-  if(want&&boostMeter>0){playerBoosting=true;boostMeter=Math.max(0,boostMeter-33*dt);}
-  else{playerBoosting=false;
-    const cleanFor=raceT-(p.lastHit===undefined?-99:p.lastHit);
-    boostMeter=Math.min(100,boostMeter+(cleanFor>4?8:3.5)*dt);   // clean flying feeds the tank
+  // ---------------------------------------------- THE VERB
+  // One gesture, four machines, each meeting this world's force in its own way.
+  const VK=p.def.key, secV=sectionAt(p.s), nearK=(p.nearK||0);
+  let thrustMul=1;
+  playerBoosting=false; p.steerMul=1;
+  if(p.charge===undefined){p.charge=(VK==='ship'?0:35);p.burnT=0;p.cut=0;p.bank=0;p.mass=0;}
+  const dF=clamp((p.gy||0)/DEPTH_MAX,0,1), grav=(secV.grav||0);
+  if(VK==='ship'){
+    // VECTOR BURNS. It escalates the longer you hold it; the reactor heats, and at the limit it cuts.
+    if(p.cut>0){p.cut-=dt;p.burnT=0;p.charge=Math.max(0,p.charge-52*dt);thrustMul=0.82;}
+    else if(want){
+      p.burnT+=dt*(1+1.6*dF*(grav>0?1:0.3)+0.5*clamp((p.speed-250)/120,0,1)); playerBoosting=true;
+      thrustMul=1+Math.min(p.burnT/3.4,1)*0.52;
+      p.charge=Math.min(100,p.charge+(17.5-Math.min(nearK,1.15)*10.5)*dt);
+      if(p.charge>=100){p.cut=2.5;p.burnT=0;p.charge=100;reactorCut();
+        annEl.textContent='reactor cut';annEl.classList.add('show');annT=-1;}
+    }else{p.burnT=0;p.charge=Math.max(0,p.charge-(13+nearK*15)*dt);}
   }
+  else if(VK==='sail'){
+    // CARAVEL. The side of the disk turning toward you is Doppler-bright. Ride it; its light shoves you off it.
+    const bright=clamp(p.x*spin/20,-1,1);
+    const lit=clamp((secV.light||0.5)*(1+0.6*bright),0,1.5);
+    p.lit=lit;
+    const align=clamp(lit*(1+Math.abs(dir.x)*0.3)-nearK*0.95-0.15,-0.6,1.4);
+    if(want){
+      playerBoosting=align>0.3;
+      thrustMul=1+align*0.42;
+      p.steerMul=0.42;
+      p.charge=clamp(p.charge+(align*30-7)*dt,0,100);
+      p.x-=spin*align*1.3*dt;                             // the bright side pushes you off itself
+    }else{p.charge=Math.max(0,p.charge-8*dt);}
+    thrustMul*=1+(p.charge/100)*0.16;
+  }
+  else if(VK==='trawler'){
+    // TRAWLER feeds on the disk. What it swallows stays aboard: fuel, and weight. It weighs most on the climb.
+    const den=(secV.den!==undefined?secV.den:0.4)+nearK*0.85;
+    if(want){
+      playerBoosting=den>0.55;
+      p.charge=clamp(p.charge+(den*44-15)*dt,0,100);
+      p.mass=clamp(p.mass+Math.max(0,den-0.3)*9*dt,0,100);
+      thrustMul=1+(den-0.5)*0.4;
+      p.steerMul=0.7;
+    }else{p.charge=Math.max(0,p.charge-4.5*dt);}
+    thrustMul*=(1+(p.charge/100)*0.28)/(1+(p.mass/100)*(grav<0?0.42:0.16));
+  }
+  else if(VK==='pendulum'){
+    // PENDULUM LOADS where time runs heavy, and winding costs you now. Let go and it spends.
+    const heavy=clamp((1-(secV.dil!==undefined?secV.dil:1))*1.2+dF*1.1+nearK*0.95,0,1.4);
+    if(want){p.bank=clamp(p.bank+(heavy*42-3.2)*dt,0,100);thrustMul=0.97;p.steerMul=0.62;}
+    else if(p.bank>0){const spend=Math.min(p.bank,16*dt);p.bank-=spend;playerBoosting=true;
+      thrustMul=1+0.34*(spend/Math.max(1e-6,16*dt));}
+    p.charge=p.bank;
+  }
+  thrustMul=clamp(thrustMul,0.8,1.34);   // every machine answers to the same ceiling
+  boostMeter=p.charge;
   // speed — heat derates the machine. that is what heat does.
   const derate=1-0.22*clamp((heat-100)/30,0,1);
-  const cap=p.def.top*(playerBoosting?1.3:1)*(1+(p.wellBoost||0));
+  const cap=p.def.top*thrustMul*(1+(p.wellBoost||0));
   const pAcc=p.def.accel*mediumMul(p.def,sectionAt(p.s));
   if(p.speed<cap)p.speed=Math.min(cap,p.speed+pAcc*(playerBoosting?2:1)*dt);
   else p.speed+=(cap-p.speed)*Math.min(1,dt*3);
@@ -1511,6 +1580,7 @@ function updateRace(dt){
   if(p.plumeCD===undefined)p.plumeCD=0;
   if(p.plumeCD>0)p.plumeCD-=dt;
   updateHazards(dt,p.s);
+  p.nearK=clamp(nearAcc,0,1.5); nearAcc=0;
   heat=0;
   // frame dragging: the hole drags space itself sideways. ride the spin, or fight it.
   const drag=(secNow.drag||0)*spin;
@@ -1623,6 +1693,18 @@ function updateRace(dt){
   if(ceded>0.3)hudDist.textContent+=' · +'+ceded.toFixed(1)+'S';   // seconds you are not living
   hudSpd.textContent=(p.speed*0.105).toFixed(1)+' KM/S';
   boostFill.style.width=boostMeter+'%';
+  {const VBL={ship:'BURN',pendulum:'WOUND',sail:'SAIL',trawler:'HOLD'};
+   let vbx=(p.cut>0?' \u2014 REACTOR CUT':'');
+   if(p.def.key==='sail'&&(p.lit||0)<0.2)vbx=' \u2014 BECALMED';
+   if(p.def.key==='trawler'&&(p.mass||0)>4)vbx=' \u00b7 CARRYING '+Math.round(p.mass)+'%';
+   $('vbLabel').textContent=(VBL[p.def.key]||'')+vbx;}
+  // your line: kept as you fly it, and read back against the one you flew before
+  if((ghostTick++)%6===0)ghostRec.push(Math.round(p.s),Math.round(p.x*10),Math.round(p.y*10));
+  if(ghost){const d=ghost.d,n=d.length/3;
+    while(ghostPtr<n-1&&d[(ghostPtr+1)*3]<=p.s)ghostPtr++;
+    if(ghostPtr<n-1){const gT=ghostPtr/(ghost.hz||GHOST_HZ);ghostGap=raceT-gT;
+      $('hudGhost').textContent='your line '+(ghostGap>=0?'+':'\u2212')+Math.abs(ghostGap).toFixed(1);}
+    else $('hudGhost').textContent='';}
   // record, for the re-living
   recBuf.push(racers.reduce(function(acc,r){acc.push(r.s,r.x,r.y);return acc;},[raceT]));
   // finish
@@ -1693,6 +1775,11 @@ function updateDone(dt){
       resTitle.innerHTML='While you crossed, the universe lived <b>'+gap.toFixed(1)+' seconds</b> you did not.';
       resSub.innerHTML='<div class="uSay">your clock and a distant clock disagree forever. neither is wrong.</div><div class="uExp">'+'you aged '+fmtTime(properT)+' \u00b7 the universe aged '+fmtTime(coordT)+' \u00b7 the well lets you climb out.'+'</div>';
     (function(){const m=properT;const sl=loadLine();
+      try{const had=ghost,kept=saveGhost(m,p.def.key);let gl='';
+        if(!had)gl=kept?'this crossing is now your line in this universe':'';
+        else if(kept)gl='ahead of your line by '+(had.t-m).toFixed(1)+'s \u00b7 this is your line now';
+        else gl=(m-had.t).toFixed(1)+'s behind your line in this universe';
+        if(gl)resSub.innerHTML+='<div class="uLine">'+gl+'</div>';}catch(e){}
       if(sl===null||m<sl){saveLine(m);saveSplits(splits);resSub.innerHTML+='<div class="uLine">a new standing line</div>';}
       else{resSub.innerHTML+='<div class="uLine">standing line '+fmtTime(sl)+'</div>';}
       try{
@@ -1815,6 +1902,44 @@ function updateRelive(dt){
 }
 
 // ------------------------------------------------------------ loop
+// ------------------------------------------------------------ your line
+// the crossing you made before, in this universe. a faint machine and a thread of light where you went.
+const GHOST_KEY='moonline.ghost.'+TRACK_KEY+'.'+SEED_HEX, GHOST_HZ=20;
+let ghostRec=[],ghostTick=0,ghost=null,ghostMesh=null,ghostTrail=null,ghostPtr=0,ghostGap=null;
+function loadGhost(){try{const v=window.localStorage.getItem(GHOST_KEY);if(!v)return null;
+  const g=JSON.parse(v);return (g&&g.d&&g.d.length>=9&&g.t>0)?g:null;}catch(e){return null;}}
+function saveGhost(T,key){try{const old=loadGhost();if(old&&old.t<=T)return false;
+  window.localStorage.setItem(GHOST_KEY,JSON.stringify({v:1,t:+T.toFixed(2),m:key,hz:GHOST_HZ,d:ghostRec}));return true;}catch(e){return false;}}
+function buildGhost(){
+  ghost=loadGhost();if(!ghost)return;
+  try{
+    const def=VEHICLES.filter(function(v){return v.key===ghost.m;})[0]||VEHICLES[0];
+    ghostMesh=def.build();
+    const gm=new THREE.MeshBasicMaterial({color:0xbfe3ff,transparent:true,opacity:0.15,blending:THREE.AdditiveBlending,depthWrite:false});
+    ghostMesh.traverse(function(o){if(o.material)o.material=gm;if(o.userData&&o.userData.flame)o.visible=false;});
+    const spark=new THREE.Mesh(new THREE.SphereGeometry(0.55,10,8),matGlow(0xdff1ff,0.55));ghostMesh.add(spark);   // far ahead, a point of light
+    ghostMesh.visible=false;scene.add(ghostMesh);
+    const N=60,g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(N*3),3));
+    ghostTrail=new THREE.Line(g,new THREE.LineBasicMaterial({color:0xbfe3ff,transparent:true,opacity:0.3,
+      blending:THREE.AdditiveBlending,depthWrite:false}));
+    ghostTrail.frustumCulled=false;ghostTrail.visible=false;scene.add(ghostTrail);
+  }catch(e){ghostMesh=null;ghostTrail=null;}
+}
+function ghostAt(i){const d=ghost.d,n=d.length/3;i=Math.max(0,Math.min(n-1,i));
+  const k=Math.floor(i),f=i-k,k2=Math.min(n-1,k+1);
+  return [d[k*3]+(d[k2*3]-d[k*3])*f,(d[k*3+1]+(d[k2*3+1]-d[k*3+1])*f)/10,(d[k*3+2]+(d[k2*3+2]-d[k*3+2])*f)/10];}
+function placeGhost(viewS){
+  if(!ghost||!ghostMesh)return;
+  const on=(phase==='race');
+  ghostMesh.visible=on;if(ghostTrail)ghostTrail.visible=on;
+  if(!on)return;
+  const gi=raceT*(ghost.hz||GHOST_HZ),g=ghostAt(gi);
+  ghostMesh.position.set(g[1],g[2],-(g[0]-viewS));
+  if(ghostTrail&&ghostTrail.geometry){const a=ghostTrail.geometry.attributes.position.array,N=a.length/3;
+    for(let j=0;j<N;j++){const q=ghostAt(gi-j*2);a[j*3]=q[1];a[j*3+1]=q[2];a[j*3+2]=-(q[0]-viewS);}
+    ghostTrail.geometry.attributes.position.needsUpdate=true;}
+}
 let camS=null,camV=0,camGap=0,coolT=0;   // where the camera stands after the hand-off, and how fast it still drifts
 let simAcc=0;
 function tick(){
@@ -1959,6 +2084,8 @@ window.addEventListener('resize',function(){
 window.__ML={
   get phase(){return phase;},
  get doneT(){return doneT;},
+  sky:function(){const sc=sectionAt(player?player.s:0);return {name:sc.name,den:sc.den,dil:sc.dil,flow:sc.flow,grav:sc.grav,light:sc.light,near:(player&&player.nearK)||0};},
+  horizon:function(){return player?horizonAt(player.s):99;},
   racers:racers,
   get seed(){return SEED_HEX;},
   nerves:function(){return Object.assign({trauma:trauma},shakeLast);},
