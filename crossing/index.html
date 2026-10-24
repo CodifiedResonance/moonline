@@ -106,6 +106,29 @@ canvas{display:block}
   justify-content:center;border:1px solid rgba(232,234,238,.35);border-radius:50%;font-size:11px;
   letter-spacing:.24em;color:rgba(232,234,238,.85);background:rgba(255,255,255,.04);z-index:5}
 #boostBtn.hot{background:rgba(232,234,238,.16)}
+/* ---- the bay: one machine at a time, each in its own air ---- */
+.bayTint{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:0}
+#bay-ship{background:radial-gradient(ellipse 70% 55% at 50% 60%,rgba(255,112,40,.22),rgba(255,70,20,.06) 55%,transparent 78%)}
+#bay-pendulum{background:radial-gradient(ellipse 60% 75% at 50% 26%,rgba(120,175,255,.17),transparent 72%)}
+#bay-sail{background:linear-gradient(100deg,transparent 30%,rgba(255,248,230,.09) 66%,rgba(255,250,240,.24))}
+#bay-trawler{background:radial-gradient(ellipse 95% 85% at 50% 55%,rgba(130,108,64,.24),rgba(70,58,34,.2) 60%,rgba(24,19,11,.34))}
+#gCard{width:min(440px,94vw);border:none;border-top:1px solid rgba(232,234,238,.14);
+  background:linear-gradient(to bottom,rgba(4,5,10,.5),rgba(4,5,10,.84));backdrop-filter:none;padding:14px 14px 12px}
+#vName{font-size:24px;letter-spacing:.2em}
+.bar{margin-bottom:6px}
+#gNext{position:fixed;right:24px;bottom:24px;width:176px;height:112px;border:1px solid rgba(232,234,238,.12);
+  pointer-events:auto;cursor:pointer;z-index:3;transition:border-color .4s ease}
+#gNext:hover{border-color:rgba(232,234,238,.38)}
+#gNext span{position:absolute;left:0;right:0;bottom:7px;text-align:center;font-size:9px;letter-spacing:.3em;
+  color:rgba(232,234,238,.46);pointer-events:none}
+@media (min-width:900px){#gridUI{align-items:flex-start;padding-left:34px}#gTop{align-self:center}#gCard{width:390px}}
+@media (max-width:899px){#gNext{width:112px;height:72px;right:10px;bottom:auto;top:calc(53% - 92px)}#gNext span{font-size:8px;bottom:4px}}
+/* ---- the hand-off: the frame goes wide and the machine goes on without you ---- */
+#lbT,#lbB{position:fixed;left:0;right:0;height:0;background:#000;z-index:5;pointer-events:none;
+  transition:height 2.2s cubic-bezier(.2,.7,.2,1)}
+#lbT{top:0}#lbB{bottom:0}
+body.cine #lbT,body.cine #lbB{height:10.5vh}
+#results{z-index:6}#relLbl{z-index:6}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -123,6 +146,8 @@ canvas{display:block}
 <div id="announce"></div>
 <div id="countdown"></div>
 <div id="flash"></div>
+<div class="bayTint" id="bay-ship"></div><div class="bayTint" id="bay-pendulum"></div><div class="bayTint" id="bay-sail"></div><div class="bayTint" id="bay-trawler"></div>
+<div id="lbT"></div><div id="lbB"></div>
 
 <div id="gridUI">
   <div id="gTop">
@@ -144,7 +169,8 @@ canvas{display:block}
       <button class="nav" id="btnNext">›</button>
     </div>
     <button id="btnLaunch">LAUNCH</button>
-    <div id="gHint" class="lbl">choose your lane · then you cross</div>
+    <div id="gNext" role="button" aria-label="Next machine"><span id="gNextLbl"></span></div>
+    <div id="gHint" class="lbl">choose your machine · then it is you against the elements</div>
   </div>
 </div>
 
@@ -239,7 +265,7 @@ function makeFlame(r,len,color){
   m.rotation.x=Math.PI/2; // apex points +z (astern)
   const core=new THREE.Mesh(new THREE.ConeGeometry(r*0.45,len*0.82,10),matGlow(0xfff6e6,0.9));
   core.position.y=len*0.05; m.add(core);   // the burn has a heart
-  m.userData.flame=true; core.userData.flame=true;
+  m.userData.flame=true; core.userData.flame=true; m.userData.fr=r; m.userData.flen=len;
   return m;
 }
 
@@ -718,6 +744,95 @@ const finishOrder=[];
 // selection ring
 const selRing=new THREE.Mesh(new THREE.TorusGeometry(3.1,0.07,8,48),matGlow(0xe8eaee,0.85));
 selRing.rotation.x=-Math.PI/2; selRing.position.set(LANE_X[0],-1.3,0); scene.add(selRing);
+selRing.visible=false;   // one machine at a time now. no lanes to choose between.
+
+// ------------------------------------------------------------ the bay: each machine in its own air
+// VECTOR stands in its own heat; PENDULUM where time is heavy and a light swings; CARAVEL in a wind
+// of light from one side; TRAWLER in a haze that is being pulled into its mouth. presentation only.
+const BAY={w:[0,0,0,0],slide:[0,15,15,15],prev:-1,dir:1,objs:[],swing:0};
+function bayRespawn(o,k,init){
+  const a=o.a,v=o.v,j=k*3,R=Math.random;
+  if(o.key==='ship'){a[j]=(R()-0.5)*10;a[j+1]=-3+(init?R()*10:0);a[j+2]=(R()-0.5)*10;
+    v[j]=(R()-0.5)*0.4;v[j+1]=0.7+R()*1.8;v[j+2]=(R()-0.5)*0.4;}
+  else if(o.key==='pendulum'){a[j]=(R()-0.5)*18;a[j+1]=-2+R()*9;a[j+2]=(R()-0.5)*16;}
+  else if(o.key==='sail'){a[j]=init?(R()-0.5)*34:17;a[j+1]=-2.5+R()*8;a[j+2]=-9+R()*16;v[j]=-(5+R()*8);}
+  else{const g=R()*6.283,rr=4+R()*11;a[j]=Math.cos(g)*rr;a[j+1]=0.3+Math.sin(g)*rr*0.6;
+    a[j+2]=-(init?4+R()*28:32);v[j+2]=4+R()*5;}
+}
+(function(){
+  try{
+    VEHICLES.forEach(function(d,i){
+      const n={ship:150,pendulum:90,sail:170,trawler:280}[d.key]||100;
+      const col={ship:0xff8a3a,pendulum:0xbfdcff,sail:0xfff4dc,trawler:0xb89a64}[d.key]||0xffffff;
+      const g=new THREE.BufferGeometry(),a=new Float32Array(n*3);
+      g.setAttribute('position',new THREE.BufferAttribute(a,3));
+      const mat=new THREE.PointsMaterial({color:col,size:(d.key==='pendulum'?0.08:0.14),transparent:true,opacity:0,
+        blending:THREE.AdditiveBlending,depthWrite:false});
+      try{if(!BAY.dot&&THREE.CanvasTexture){const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');
+        const gr=x.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.35,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');
+        x.fillStyle=gr;x.fillRect(0,0,32,32);BAY.dot=new THREE.CanvasTexture(c);}
+        if(BAY.dot){mat.map=BAY.dot;mat.size*=2.2;mat.needsUpdate=true;}}catch(e){}   // round motes, not squares
+      const pts=new THREE.Points(g,mat);pts.frustumCulled=false;pts.visible=false;scene.add(pts);
+      const L={ship:[0xff7a2a,2.6,34,0,-2.6,2.4],pendulum:[0x9fd4ff,2.4,40,0,5.5,0],
+               sail:[0xfff6e6,3.2,64,17,4,-2],trawler:[0xc7a46a,1.7,36,0,3,-7]}[d.key];
+      const l=new THREE.PointLight(L[0],0,L[2]);l.position.set(L[3],L[4],L[5]);scene.add(l);
+      const o={key:d.key,pts:pts,a:a,v:new Float32Array(n*3),n:n,op:(d.key==='trawler'?0.62:0.85),l:l,li:L[1]};
+      for(let k=0;k<n;k++)bayRespawn(o,k,true);
+      BAY.objs[i]=o;
+    });
+  }catch(e){BAY.objs=[];}
+})();
+function updateBay(dt,on){
+  for(let i=0;i<BAY.objs.length;i++){
+    const o=BAY.objs[i];if(!o)continue;
+    BAY.w[i]+=(((on&&i===sel)?1:0)-BAY.w[i])*Math.min(1,dt*2.4);
+    const w=BAY.w[i];
+    const tint=document.getElementById('bay-'+o.key);if(tint)tint.style.opacity=String(w);
+    let li=o.li*w;
+    if(o.key==='pendulum'){o.l.position.x=Math.sin(t*Math.PI)*7;li*=0.5+0.5*Math.abs(Math.sin(t*Math.PI));}   // a two-second swing
+    o.l.intensity=li;
+    o.pts.visible=w>0.01;o.pts.material.opacity=o.op*w;
+    if(o.key==='trawler'&&scene.fog)scene.fog.density=0.0018+0.011*w;
+    if(w<0.01)continue;
+    const a=o.a,v=o.v;
+    for(let k=0;k<o.n;k++){const j=k*3;
+      if(o.key==='pendulum'){a[j+1]+=Math.sin(t*0.25+k)*0.0015;continue;}        // time is heavy here: almost nothing moves
+      if(o.key==='trawler'){a[j]-=a[j]*dt*0.38;a[j+1]+=(0.3-a[j+1])*dt*0.38;a[j+2]+=v[j+2]*dt;   // drawn into the scoop
+        if(a[j+2]>-2.4)bayRespawn(o,k,false);continue;}
+      a[j]+=v[j]*dt;a[j+1]+=v[j+1]*dt;a[j+2]+=v[j+2]*dt;
+      if(o.key==='ship'&&a[j+1]>7.5)bayRespawn(o,k,false);
+      if(o.key==='sail'&&a[j]<-17)bayRespawn(o,k,false);
+    }
+    o.pts.geometry.attributes.position.needsUpdate=true;
+  }
+  // PENDULUM's room keeps time
+  if(on&&VEHICLES[sel].key==='pendulum'&&BAY.w[sel]>0.5){
+    const sw=Math.sin(t*Math.PI)>=0?1:-1;
+    if(sw!==BAY.swing){BAY.swing=sw;blip(sw>0?1900:1700,0.025,0.03);}
+  }
+}
+// the next machine waits, small, in its own frame
+const PREV={scene:null,cam:null,meshes:[]};
+try{
+  PREV.scene=new THREE.Scene();PREV.scene.background=new THREE.Color(0x05060b);
+  PREV.cam=new THREE.PerspectiveCamera(30,1.6,0.1,200);PREV.cam.position.set(6.2,2.6,8.6);PREV.cam.lookAt(0,0,0);
+  PREV.scene.add(new THREE.AmbientLight(0x5a6075,1.1));
+  const kl=new THREE.DirectionalLight(0xffffff,1.0);kl.position.set(4,6,5);PREV.scene.add(kl);
+  VEHICLES.forEach(function(d){const m=d.build();m.visible=false;PREV.scene.add(m);PREV.meshes.push(m);});
+}catch(e){PREV.scene=null;}
+function renderPreview(){
+  if(!PREV.scene||!renderer.setScissorTest)return;
+  const el=document.getElementById('gNext');if(!el||!el.getBoundingClientRect||gridUI.style.display==='none')return;   // fixed elements have no offsetParent: ask the grid
+  const r=el.getBoundingClientRect();if(r.width<8)return;
+  const nx=(sel+1)%VEHICLES.length;
+  for(let i=0;i<PREV.meshes.length;i++){PREV.meshes[i].visible=(i===nx);if(i===nx)PREV.meshes[i].rotation.y=0.5+Math.sin(t*0.3)*0.5;}
+  const pk=({ship:1.5,trawler:1.2})[VEHICLES[nx].key]||1;PREV.cam.position.set(6.2*pk,2.6*pk,8.6*pk);PREV.cam.lookAt(0,0,0);   // the big ones stand further back
+  const H=window.innerHeight,x=r.left+1,y=H-r.bottom+1,w=r.width-2,h=r.height-2;
+  renderer.setScissorTest(true);renderer.setScissor(x,y,w,h);renderer.setViewport(x,y,w,h);
+  PREV.cam.aspect=w/h;PREV.cam.updateProjectionMatrix();
+  renderer.render(PREV.scene,PREV.cam);
+  renderer.setScissorTest(false);renderer.setViewport(0,0,window.innerWidth,window.innerHeight);
+}
 
 // ------------------------------------------------------------ hazards
 const astGeos=[];
@@ -1062,6 +1177,7 @@ let sel=0;
 function showVehicle(){
   const d=VEHICLES[sel];
   vName.textContent=d.name;
+  try{$('gNextLbl').textContent='next \u00b7 '+VEHICLES[(sel+1)%VEHICLES.length].name;}catch(e){}
   vLine.textContent=d.line;
   const TRAITS={
     ship:'FORGIVING \u00b7 VIOLENT THRUST \u00b7 RUNS HOT',
@@ -1079,7 +1195,20 @@ function showVehicle(){
   bAcc.style.width=Math.round(d.accel/70*100)+'%';
   bHan.style.width=Math.round(d.steer/32*100)+'%';
 }
-function cycle(dir){sel=(sel+dir+VEHICLES.length)%VEHICLES.length;showVehicle();blip(560,0.05,0.08);}
+function cycle(dir){
+  const was=sel;sel=(sel+dir+VEHICLES.length)%VEHICLES.length;
+  BAY.prev=was;BAY.dir=dir;BAY.slide[sel]=dir*15;
+  showVehicle();blip(560,0.05,0.08);
+}
+$('gNext').addEventListener('click',function(e){e.stopPropagation();initAudio();cycle(1);});
+// on a phone, the bay swipes
+(function(){let sx=null,sy=0;
+  renderer.domElement.addEventListener('pointerdown',function(e){if(phase==='grid'){sx=e.clientX;sy=e.clientY;}});
+  renderer.domElement.addEventListener('pointerup',function(e){
+    if(phase==='grid'&&sx!==null){const dx=e.clientX-sx,dy=e.clientY-sy;
+      if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.4){initAudio();cycle(dx<0?1:-1);}}
+    sx=null;});
+})();
 $('btnPrev').addEventListener('click',function(){initAudio();cycle(-1);});
 $('btnNext').addEventListener('click',function(){initAudio();cycle(1);});
 $('btnLaunch').addEventListener('click',function(){initAudio();confirmPick();});
@@ -1121,11 +1250,17 @@ const clock=new THREE.Clock();
 function confirmPick(){
   if(phase!=='grid')return;
   player=racers[sel];player.isPlayer=true;
+  // alone. no field, no rivals: one machine, and the world.
+  for(let i=racers.length-1;i>=0;i--){if(racers[i]!==player){scene.remove(racers[i].mesh);racers.splice(i,1);}}
+  // the bay's lights leave with the field; a light left at zero still costs every shader
+  BAY.objs.forEach(function(o){if(o){scene.remove(o.l);scene.remove(o.pts);}});BAY.objs=[];
+  document.querySelectorAll('.bayTint').forEach(function(e){e.style.transition='opacity 1.2s ease';e.style.opacity='0';});
+  if(scene.fog)scene.fog.density=0.0018;
+  player.x=0;player.mesh.visible=true;
   gridUI.style.display='none';
   selRing.visible=false;
   hudEl.classList.add('on');
   if(coarse)boostBtn.style.display='flex';
-  // the field is not here to lose: one contender, one strong, one honest journeyman
   RNG=mulberry32(SEED);                            // from here, the universe is the seed's
   recBuf.length=0;inpBuf.length=0;
   peakSpd=0;contacts=0;grazes=0;cleanRun=0;bestClean=0;nearAcc=0;
@@ -1137,11 +1272,6 @@ function confirmPick(){
     r.weavePhase=rand(0,6.28);r.nextBoost=rand(8,16);
     if(r.nerve!==undefined)r.nerve=rand(0,1);
   }
-  // the contender is whoever brought the fastest machine. a field that cannot win is not a field.
-  const pool=[0.995,0.965,0.93];
-  const rivals=racers.filter(function(r){return r!==player;})
-    .sort(function(a,b){return b.def.top-a.def.top;});   // the fastest machine carries the best pilot
-  for(let i=0;i<rivals.length;i++)rivals[i].skillBase=pool[Math.min(i,pool.length-1)]+rand(-0.008,0.008);
   phase='count';cdT=0;cdStep=-1;
 }
 
@@ -1164,10 +1294,39 @@ function placeRacers(viewS,dt){
     if(r===player&&phase==='done'){            // over the line, the engines shut down
       const ek=clamp(1-doneT/1.4,0,1);
       r.mesh.traverse(function(o){if(o.userData&&o.userData.flame){o.visible=ek>0.03;if(o.material)o.material.opacity*=ek;o.scale.y*=0.4+0.6*ek;}});
+      try{afterglow(r);}catch(e){}
     }
   }
 }
 let playerBoosting=false;
+// over the line the burn goes out, and what's left is heat: the nozzles glow, and cool
+function afterglow(r){
+  const u=r.mesh.userData;
+  if(!u.after){
+    u.after=[];const fl=[];
+    r.mesh.traverse(function(o){if(o.userData&&o.userData.flen)fl.push(o);});
+    fl.forEach(function(f){
+      const par=f.parent||r.mesh,rr=f.userData.fr,L=f.userData.flen;
+      const core=new THREE.Mesh(new THREE.SphereGeometry(rr*0.78,14,10),matGlow(0xffa040,0));
+      const halo=new THREE.Mesh(new THREE.SphereGeometry(rr*1.9,14,10),matGlow(0xff6a20,0));
+      core.position.set(f.position.x,f.position.y,f.position.z-L*0.5+rr*0.3);
+      halo.position.set(core.position.x,core.position.y,core.position.z);
+      par.add(core);par.add(halo);u.after.push(core,halo);
+    });
+    // no extra light: every light is paid for in every shader, and a weak GPU drops the whole machine
+  }
+  const h=0.2+0.8*Math.exp(-Math.max(0,doneT-0.6)/3.8);    // hot, then cooling. it does not go out while you watch.
+  const inK=clamp((doneT-0.15)/0.9,0,1),blue=(r.def.key==='pendulum');
+  for(let i=0;i<u.after.length;i++){
+    const m=u.after[i],halo=(i%2===1);m.visible=true;
+    if(m.material&&m.material.color&&m.material.color.setRGB){
+      if(blue)m.material.color.setRGB(0.2+0.6*h,0.35+0.55*h,1.0);
+      else m.material.color.setRGB(1.0,0.1+0.66*h*h,0.02+0.34*h*h*h);   // white-gold, orange, ember red
+    }
+    if(m.material)m.material.opacity=inK*(halo?0.18+0.26*h:0.5+0.5*h);
+  }
+  if(u.afterL)u.afterL.intensity=inK*2.4*h*(blue?0.55:1);
+}
 // grains are born around the craft, weighted close: at speed, close is what you feel
 function dustSpawn(da,i){
   const cx=(player?player.x:0),cy=(player?player.y:0);
@@ -1194,21 +1353,27 @@ let boostMeter=100;
 
 function updateGrid(dt){
   for(let i=0;i<racers.length;i++){
-    racers[i].y=Math.sin(t*1.7+i*1.3)*0.12;
-    racers[i].x=LANE_X[i];
+    // the chosen machine stands in the middle; the one you left slides out the way you sent it
+    const tgt=(i===sel?0:(i===BAY.prev?-BAY.dir*15:(BAY.slide[i]>=0?15:-15)));
+    BAY.slide[i]+=(tgt-BAY.slide[i])*Math.min(1,dt*4.5);
+    racers[i].x=BAY.slide[i];
+    racers[i].y=Math.sin(t*1.1+i*1.3)*0.18;
+    racers[i].mesh.visible=Math.abs(BAY.slide[i])<14.6;
   }
-  selRing.position.x+=(LANE_X[sel]-selRing.position.x)*Math.min(1,dt*8);
+  updateBay(dt,true);
   const aspect=window.innerWidth/Math.max(1,window.innerHeight);
-  const gz=Math.max(24,12.5/(Math.tan(0.576)*aspect)); // keep ±10 lanes framed on portrait
-  camera.position.set(Math.sin(t*0.18)*2.2,5.2,gz);
-  camera.lookAt(0,0.6,-14);
-  camera.fov=66;camera.updateProjectionMatrix();
+  const R=(aspect<0.9?18:(aspect<1.3?15:13));        // close on a wide screen; back off on a phone
+  const ang=(aspect<0.9?0.3+Math.sin(t*0.11)*0.2:0.62+Math.sin(t*0.11)*0.34);                    // a slow walk around the machine
+  camera.position.set(Math.sin(ang)*R,2.5+Math.sin(t*0.07)*0.4,Math.cos(ang)*R);
+  camera.lookAt(aspect<0.9?0:-3.4,(aspect<0.9?-3.6:-0.5),0);
+  camera.fov=(aspect<0.9?60:46);camera.updateProjectionMatrix();
   placeWorld(0);placeRacers(0,dt);
-  setEngine(0.06,false,false);
+  setEngine(({ship:0.13,pendulum:0.03,sail:0,trawler:0.09})[VEHICLES[sel].key]||0.06,false,false);   // each machine's own hum; the sail has none
 }
 
 function updateCount(dt){
   cdT+=dt;
+  updateBay(dt,false);
   const step=Math.floor(cdT/0.85);
   if(step!==cdStep){
     cdStep=step;
@@ -1545,12 +1710,6 @@ function updateRace(dt){
   hudPos.style.opacity=String(1-driftK*0.95);
   if(driftGain)driftGain.gain.value=driftK*0.017;
   setEngine(clamp(p.speed/330,0,1)*(1-driftK*0.97),playerBoosting,sec.name==='THE NOTHING');
-  // the race can end without you. that is allowed to be a fact, not a failure.
-  if(driftOn&&!raceWentOn&&racers.every(function(r){return r===player||r.finished;})){
-    raceWentOn=true;
-    annEl.textContent='the others have crossed without you';
-    annEl.classList.add('show');annT=-4;   // let it rest longer than a section call
-  }
   // section announce + quiet hud
   // hysteresis: a threshold you can sit on must not stutter
   if(openShown){if(rOff<20)openShown=false;}else{if(rOff>30)openShown=true;}
@@ -1603,21 +1762,38 @@ function updateDone(dt){
   const p=player;
   // engines off in vacuum: nothing slows you. you coast, and the Moon is still a long way off.
   p.s+=p.speed*dt;
+  // THE HAND-OFF. for a breath the camera holds where it was; then it lets go of the machine.
+  // the machine goes on into the world at its own speed; the camera drifts slower, and watches it go.
+  if(camS===null){camS=p.s;camGap=0;camV=p.speed;document.body.classList.add('cine');annEl.classList.remove('show');}
+  const relK=(doneT<1.0?0:Math.min(0.065,(doneT-1.0)*0.03));   // it pulls away from us slowly: we watch it go, we don't lose it
+  camGap+=relK*p.speed*dt;camV=p.speed*(1-relK);   // the gap only ever opens: if the machine slows, so do we
+  camS=p.s-camGap;
+  // the hull ticks as it cools
+  if(actx&&p.def.key==='ship'&&doneT>1.3&&doneT<28){coolT-=dt;
+    if(coolT<=0){blip(2500+Math.random()*3000,0.03+Math.random()*0.05,0.01+Math.random()*0.02);
+      coolT=0.12+(doneT-1.3)*0.1+Math.random()*(0.25+doneT*0.06);}}
   p.mesh.rotation.z*=0.95;p.mesh.rotation.x*=0.95;
+  p.inv=0;p.mesh.visible=true;   // a hit's blink must not freeze the machine invisible over the line
   for(let i=0;i<racers.length;i++)if(racers[i]!==p)updateRival(racers[i],dt);
-  updateHazards(dt,p.s);
-  placeWorld(p.s);placeRacers(p.s,dt);
-  camera.position.set(p.x*0.4,4.6+p.y*0.4,16);
+  updateHazards(dt,camS);
+  placeWorld(camS);placeRacers(camS,dt);
+  {const da=dustAttr.array;for(let i=0;i<DUST_N;i++){da[i*3+2]+=camV*dt*0.92*(1-0.55*clamp((doneT-0.6)/3.8,0,1));if(da[i*3+2]>14)dustSpawn(da,i);}dustAttr.needsUpdate=true;}
+  // the camera falls back and to the side, the lens lengthens, and the machine is out there on its own
+  const ck=clamp((doneT-0.6)/3.8,0,1),ce=ck*ck*(3-2*ck);
+  const ak=clamp((doneT-0.2)/2.2,0,1),ae=ak*ak*(3-2*ak);   // the eye finds the machine before the body moves
+  const cz=-(p.s-camS),side=(p.x>=0?1:-1),sway=0.2*ce;
   const lookY=lerp(1,50,Math.min(1,doneT*0.25));
-  camera.lookAt(p.x*0.4,lookY,-400);
-  camera.fov=lerp(camera.fov,60,dt*1.5);camera.updateProjectionMatrix();
+  camera.position.set(lerp(p.x*0.4,p.x*0.6+side*12.5,ce)+fbm(t*0.21,7)*sway,
+    lerp(4.6+p.y*0.4,1.4+p.y*0.6,ce)+fbm(t*0.17,8)*sway,lerp(16,cz*0.62+11,ce));   // alongside it first; then it pulls away from us
+  camera.lookAt(lerp(p.x*0.4,p.x,ae),lerp(lookY,p.y+0.9+lookY*0.06,ae),lerp(-400,cz-22,ae));
+  camera.fov=lerp(camera.fov,lerp(60,42,ce),dt*1.5);camera.updateProjectionMatrix();
   // the engine is off. its hum decays below and is not re-lit.
   hudEl.classList.remove('quiet');
   // arrival: the engine winds down, you coast, received — then the card
   if(actx){engGain.gain.value*= (1-Math.min(1,dt*1.4));windGain.gain.value*=(1-Math.min(1,dt*1.4));
     if(driftGain)driftGain.gain.value*=(1-Math.min(1,dt*1.2));}
   hudEl.style.opacity=String(Math.max(0,1-doneT*0.8));
-  if(!resShown&&doneT>3.0){
+  if(!resShown&&doneT>5.4){
     resShown=true;
     try{$('btnLeave').style.display='none';}catch(e){}
     try{const bk0=$('btnBack');
@@ -1656,6 +1832,9 @@ let recBuf=[],inpBuf=[],relT=0,relIdx=0,relPBase=1;
 let relShot=0,relShotI=-1,relShotT=0,relSide=1,relRock=null;
 function startRelive(){
   if(recBuf.length<10||!player)return;
+  try{player.mesh.traverse(function(o){if(o.userData&&o.userData.flame)o.visible=true;});
+    (player.mesh.userData.after||[]).forEach(function(m){m.visible=false;});
+    if(player.mesh.userData.afterL)player.mesh.userData.afterL.intensity=0;}catch(e){}
   results.style.display='none';
   relT=recBuf[0][0];relIdx=0;relShotI=-1;relShotT=0;relRock=null;
   relPBase=1+racers.indexOf(player)*3;
@@ -1736,6 +1915,7 @@ function updateRelive(dt){
 }
 
 // ------------------------------------------------------------ loop
+let camS=null,camV=0,camGap=0,coolT=0;   // where the camera stands after the hand-off, and how fast it still drifts
 let simAcc=0;
 function tick(){
   window.requestAnimationFrame(tick);
@@ -1817,6 +1997,7 @@ function tick(){
     }catch(e){POST=false;try{renderer.setRenderTarget(null);}catch(e2){}renderer.render(scene,camera);}
   }else renderer.render(scene,camera);
   if(shook)camera.quaternion.copy(_shQ);
+  if(phase==='grid')renderPreview();
   if(lead){
     scene.position.z=0;
     for(let i=0;i<racers.length;i++)racers[i].mesh.position.z+=racers[i].speed*lead;
@@ -1881,6 +2062,7 @@ window.addEventListener('resize',function(){
 // debug hooks (harmless in production)
 window.__ML={
   get phase(){return phase;},
+ get doneT(){return doneT;},
   racers:racers,
   asteroids:asteroids,
   meteors:meteors,
