@@ -133,6 +133,14 @@ canvas{display:block}
 #lbT{top:0}#lbB{bottom:0}
 body.cine #lbT,body.cine #lbB{height:10.5vh}
 #results{z-index:6}#relLbl{z-index:6}
+/* ---- the fall ---- */
+#fallSky{position:fixed;left:50%;top:46%;width:0;height:0;transform:translate(-50%,-50%);border-radius:50%;
+  background:#000;z-index:4;pointer-events:none;display:none}
+#fallBlue{position:fixed;inset:0;background:rgb(150,196,255);mix-blend-mode:screen;opacity:0;z-index:3;pointer-events:none;display:none}
+#farClock{position:fixed;left:0;right:0;bottom:19%;text-align:center;z-index:5;pointer-events:none;display:none;
+  font-size:13px;letter-spacing:.22em;color:rgba(236,244,255,.9);text-shadow:0 0 18px rgba(150,196,255,.9)}
+#farClock span{display:block;font-size:9px;letter-spacing:.34em;opacity:.55;margin-bottom:6px}
+#theVoid{position:fixed;inset:0;background:#000;z-index:7;display:none;pointer-events:none}
 #hudGhost{font-size:10px;letter-spacing:.2em;color:rgba(191,227,255,.62);margin-left:14px}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
@@ -182,6 +190,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 </div>
 
 <div id="relLbl"></div>
+<div id="fallBlue"></div><div id="fallSky"></div><div id="farClock"><span>the universe outside</span><b id="farNum"></b></div><div id="theVoid"></div>
 <div id="results">
   <div id="resTitle"></div>
   <div id="resSub"></div>
@@ -1609,7 +1618,7 @@ function updateRace(dt){
   if(hz<12&&p.gy>hz-1.6&&Math.random()<dt*3.5)blip(210,0.06,0.05);   // radio altimeter: the well is near
   if(p.gy>hz){
     lost=true;p.finished=true;p.fTime=properT;finishOrder.push(p);
-    setEngine(0,false,true);blip(60,1.2,0.16);
+    fallCoord0=coordT;   // the last moment the universe can ever see you
     phase='done';doneT=0;resShown=false;flashEl.style.opacity=0;
     return;
   }
@@ -1717,6 +1726,7 @@ function updateRace(dt){
 
 function updateDone(dt){
   raceT+=dt;doneT+=dt;
+  if(lost){updateFall(dt);return;}
   const p=player;
   // engines off, still climbing: the well takes your speed as you leave it.
   p.speed=lerp(p.speed,55,Math.min(1,dt*0.8));
@@ -1806,6 +1816,7 @@ let recBuf=[],inpBuf=[],relT=0,relIdx=0,relPBase=1;
 let relShot=0,relShotI=-1,relShotT=0,relSide=1,relRock=null;
 function startRelive(){
   if(recBuf.length<10||!player)return;
+  ['theVoid','fallSky','fallBlue','farClock'].forEach(function(id){try{$(id).style.display='none';}catch(e){}});
   try{player.mesh.traverse(function(o){if(o.userData&&o.userData.flame)o.visible=true;});
     (player.mesh.userData.after||[]).forEach(function(m){m.visible=false;});
     if(player.mesh.userData.afterL)player.mesh.userData.afterL.intensity=0;}catch(e){}
@@ -1931,7 +1942,7 @@ function ghostAt(i){const d=ghost.d,n=d.length/3;i=Math.max(0,Math.min(n-1,i));
   return [d[k*3]+(d[k2*3]-d[k*3])*f,(d[k*3+1]+(d[k2*3+1]-d[k*3+1])*f)/10,(d[k*3+2]+(d[k2*3+2]-d[k*3+2])*f)/10];}
 function placeGhost(viewS){
   if(!ghost||!ghostMesh)return;
-  const on=(phase==='race');
+  const on=(phase==='race'||(phase==='done'&&lost&&!fallCut));
   ghostMesh.visible=on;if(ghostTrail)ghostTrail.visible=on;
   if(!on)return;
   const gi=raceT*(ghost.hz||GHOST_HZ),g=ghostAt(gi);
@@ -1939,6 +1950,74 @@ function placeGhost(viewS){
   if(ghostTrail&&ghostTrail.geometry){const a=ghostTrail.geometry.attributes.position.array,N=a.length/3;
     for(let j=0;j<N;j++){const q=ghostAt(gi-j*2);a[j*3]=q[1];a[j*3+1]=q[2];a[j*3+2]=-(q[0]-viewS);}
     ghostTrail.geometry.attributes.position.needsUpdate=true;}
+}
+// ------------------------------------------------------------ the fall
+let fallCoord0=0,fallCut=false,fallCard=false;
+function farFmt(sec){
+  const Y=31557600;
+  if(sec<60)return sec.toFixed(1)+' seconds';
+  if(sec<3600)return (sec/60).toFixed(1)+' minutes';
+  if(sec<86400)return (sec/3600).toFixed(1)+' hours';
+  if(sec<Y)return Math.floor(sec/86400).toLocaleString('en-GB')+' days';
+  const y=sec/Y;
+  if(y<1e6)return Math.floor(y).toLocaleString('en-GB')+' years';
+  if(y<1e9)return (y/1e6).toFixed(1)+' million years';
+  if(y<1e12)return (y/1e9).toFixed(1)+' billion years';
+  if(y<1e15)return (y/1e12).toFixed(1)+' trillion years';
+  const sup='\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079';
+  const e=String(Math.floor(Math.log10(y))).split('').map(function(c){return sup[+c];}).join('');
+  return '10'+e+' years';
+}
+function updateFall(dt){
+  const p=player;
+  // INSIDE: crossing the edge is nothing. the hum goes on, the hands still answer, and none of it matters now.
+  if(!fallCut){
+    if(cdEl.textContent&&raceT>0.9)cdEl.textContent='';
+    p.s+=p.speed*dt;
+    placeWorld(p.s,dt);placeRacers(p.s,dt);updateHazards(dt,p.s);
+    {const da=dustAttr.array;for(let i=0;i<DUST_N;i++){da[i*3+2]+=p.speed*dt*0.92;if(da[i*3+2]>14)dustSpawn(da,i);}dustAttr.needsUpdate=true;}
+    camera.position.set(p.x*0.4,4.6+p.y*0.5,16);camera.lookAt(p.x*0.4,1,-400);
+    setEngine(clamp(p.speed/330,0,1),false,false);
+    hudPos.textContent=fmtTime(properT+doneT);   // your clock does not stop. it never will, for you.
+    // then the sky behind you closes: ahead is the hole, and everything else squeezes into a ring at the edge of sight
+    const u=clamp((doneT-1.6)/3.8,0,1),ue=Math.pow(u,1.7);
+    const sky=$('fallSky'),blue=$('fallBlue'),fc=$('farClock');
+    if(u>0){
+      sky.style.display='block';blue.style.display='block';fc.style.display='block';
+      const vm=Math.max(window.innerWidth,window.innerHeight);
+      const d=ue*vm*1.9;sky.style.width=d+'px';sky.style.height=d+'px';
+      const g=Math.round(18+ue*90),a=(0.35+0.65*ue).toFixed(2);
+      sky.style.boxShadow='0 0 '+g+'px '+Math.round(g*0.45)+'px rgba(214,234,255,'+a+'),0 0 '+(g*3)+'px '+g+'px rgba(130,180,255,'+(a*0.5).toFixed(2)+')';
+      blue.style.opacity=(ue*0.42).toFixed(3);   // what light still reaches you arrives blueshifted
+      // the far clock: the whole future of the outside, arriving at once
+      const L=lerp(Math.log10(Math.max(1,coordT)),108,Math.pow(u,2.3));
+      $('farNum').textContent=farFmt(Math.pow(10,L));
+    }
+    if(doneT>=5.4){
+      // THE END. one frame. no fade, no sound.
+      fallCut=true;
+      $('theVoid').style.display='block';sky.style.display='none';blue.style.display='none';fc.style.display='none';
+      hudEl.style.opacity='0';try{$('btnLeave').style.display='none';}catch(e){}
+      boostBtn.style.display='none';annEl.classList.remove('show');
+      if(actx){engGain.gain.value=0;windGain.gain.value=0;if(tearGain)tearGain.gain.value=0;if(subGain)subGain.gain.value=0;
+        if(typeof driftGain!=='undefined'&&driftGain)driftGain.gain.value=0;}
+    }
+    return;
+  }
+  // after the end: black, and silence
+  $('theVoid').style.display='block';
+  if(actx){engGain.gain.value=0;windGain.gain.value=0;}
+  if(!fallCard&&doneT>=8.4){
+    fallCard=true;resShown=true;
+    resTitle.innerHTML='The well kept you.';
+    resSub.innerHTML='<div class="uSay">you lived 5.4 seconds past the edge.</div>'+
+      '<div class="uExp">to the universe, you are still there \u2014 at the edge, reddening, slowing, forever.</div>'+
+      '<div class="uLine">its clock stopped seeing you at '+fmtTime(fallCoord0)+'</div>';
+    $('fieldNote').innerHTML='what the theory says of a spinning hole: at its inner edge, the whole future of the outside arrives at once. real holes may not allow it.';
+    try{const bk0=$('btnBack');if(bk0&&!backSet){bk0.href=RETURN_URL;bk0.style.display='inline-block';}}catch(e){}
+    results.style.zIndex='8';
+    results.classList.add('arrive');results.style.display='flex';
+  }
 }
 let camS=null,camV=0,camGap=0,coolT=0;   // where the camera stands after the hand-off, and how fast it still drifts
 let simAcc=0;
@@ -2052,7 +2131,7 @@ function updateSpeedFeel(dt){
   warpK+=(wT-warpK)*Math.min(1,dt*(wT>warpK?2.2:1.2));
   duckK=Math.max(0,duckK-dt*2.6);
   if(actx&&tearGain){
-    const arrQ=(phase==='done'?clamp(1-doneT/1.8,0,1):1);   // engines off: the tearing falls away
+    const arrQ=(phase==='done'?(lost?(fallCut?0:1):clamp(1-doneT/1.8,0,1)):1);   // engines off: the tearing falls away
     tearGain.gain.value=(warpK*warpK*0.075+boostPunch*0.03)*(1-duckK*0.8)*arrQ;
     tearFilt.frequency.value=1800+warpK*3600;
     subGain.gain.value=warpK*0.06*(1-duckK*0.5)*arrQ;
