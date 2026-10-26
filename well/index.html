@@ -141,6 +141,11 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
   font-size:13px;letter-spacing:.22em;color:rgba(236,244,255,.9);text-shadow:0 0 18px rgba(150,196,255,.9)}
 #farClock span{display:block;font-size:9px;letter-spacing:.34em;opacity:.55;margin-bottom:6px}
 #theVoid{position:fixed;inset:0;background:#000;z-index:7;display:none;pointer-events:none}
+#depthGauge{position:absolute;right:22px;top:50%;width:2px;height:150px;margin-top:-75px;background:rgba(232,234,238,.14)}
+#dgEdge{position:absolute;left:-7px;width:16px;height:2px;background:#ff6a3d;display:none}
+#dgYou{position:absolute;left:-5px;width:12px;height:2px;background:#e8eaee;transition:background .2s}
+#dgGap{position:absolute;left:0;width:2px;background:rgba(255,106,61,.35);display:none}
+#dgLbl{position:absolute;right:10px;top:-18px;font-size:9px;letter-spacing:.24em;color:rgba(232,234,238,.42);white-space:nowrap}
 #hudGhost{font-size:10px;letter-spacing:.2em;color:rgba(191,227,255,.62);margin-left:14px}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
@@ -154,7 +159,8 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     <div id="vbLabel"></div>
     <div id="heatWrap"><div id="heatFill"></div></div>
   </div>
-  <div id="hintKeys" class="lbl">arrows / wasd steer · shift boost</div>
+  <div id="depthGauge"><div id="dgLbl">DEPTH</div><div id="dgGap"></div><div id="dgEdge"></div><div id="dgYou"></div></div>
+  <div id="hintKeys" class="lbl">↑ climb against the pull · ↓ dive · ← → steer · space hold</div>
 </div>
 
 <div id="announce"></div>
@@ -167,7 +173,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 <div id="gridUI">
   <div id="gTop">
     <div id="gTitle" class="lbl">moonline · track 05 — the well</div>
-    <div id="gSub">You arrive at the edge of a hole in everything. The crossing has already begun.<br/>Destination: out again. The deep line is faster. It costs you time itself.</div>
+    <div id="gSub">You arrive at the edge of a hole in everything. The crossing has already begun.<br/>Destination: out again. The deep line is faster. It costs you time itself.<br/><span style="opacity:.6">The hole is always pulling you down. Up holds you against it.</span></div>
   </div>
   <div id="gCard">
     <div id="gRow">
@@ -1615,10 +1621,16 @@ function updateRace(dt){
   p.wellBoost=depthFrac*(secNow.grav>0?0.28:0.06);
   // THE HORIZON: past the survivable depth, the race is simply over. no drama.
   const hz=horizonAt(p.s);
-  if(hz<12&&p.gy>hz-1.6&&Math.random()<dt*3.5)blip(210,0.06,0.05);   // radio altimeter: the well is near
+  {const m=hz-(p.gy||0);                                  // margin to the edge
+   if(m<4.2){altT-=dt;if(altT<=0){
+     const k=clamp(1-m/4.2,0,1);
+     blip(m<1.5?lerp(900,1500,clamp(1-m/1.5,0,1)):520,0.045,0.035+0.05*k);   // a radio altimeter: you can hear it coming
+     altT=0.07+0.6*(1-k)*(1-k);}}
+   else altT=0;}
   if(p.gy>hz){
     lost=true;p.finished=true;p.fTime=properT;finishOrder.push(p);
     fallCoord0=coordT;   // the last moment the universe can ever see you
+    fallInfo={over:(p.gy||0)-hz,sec:secNow.name};
     phase='done';doneT=0;resShown=false;flashEl.style.opacity=0;
     return;
   }
@@ -1698,6 +1710,13 @@ function updateRace(dt){
   const km=Math.max(0,(FINISH-p.s)/FINISH*100);
   const hudHz=horizonAt(p.s);
   hudDist.textContent='DEPTH '+((p.gy||0)).toFixed(1)+(hudHz<12?' · HORIZON '+hudHz.toFixed(1):'');
+  {const H=150,yy=clamp((p.gy||0)/DEPTH_MAX,0,1)*H,ey=clamp(hudHz/DEPTH_MAX,0,1)*H,edgeOn=hudHz<=DEPTH_MAX+0.4;
+   const you=$('dgYou'),edge=$('dgEdge'),gap=$('dgGap');
+   you.style.top=(yy-1)+'px';
+   edge.style.display=edgeOn?'block':'none';edge.style.top=(ey-1)+'px';
+   const mg=hudHz-(p.gy||0);
+   gap.style.display=(edgeOn&&mg<3)?'block':'none';gap.style.top=yy+'px';gap.style.height=Math.max(0,ey-yy)+'px';
+   you.style.background=(edgeOn&&mg<1.5)?'#ff6a3d':'#e8eaee';}
   const ceded=Math.max(0,coordT-properT);
   if(ceded>0.3)hudDist.textContent+=' · +'+ceded.toFixed(1)+'S';   // seconds you are not living
   hudSpd.textContent=(p.speed*0.105).toFixed(1)+' KM/S';
@@ -1952,6 +1971,7 @@ function placeGhost(viewS){
     ghostTrail.geometry.attributes.position.needsUpdate=true;}
 }
 // ------------------------------------------------------------ the fall
+let altT=0,fallInfo=null;
 let fallCoord0=0,fallCut=false,fallCard=false;
 function farFmt(sec){
   const Y=31557600;
@@ -2012,7 +2032,9 @@ function updateFall(dt){
     resTitle.innerHTML='The well kept you.';
     resSub.innerHTML='<div class="uSay">you lived 5.4 seconds past the edge.</div>'+
       '<div class="uExp">to the universe, you are still there \u2014 at the edge, reddening, slowing, forever.</div>'+
-      '<div class="uLine">its clock stopped seeing you at '+fmtTime(fallCoord0)+'</div>';
+      '<div class="uLine">its clock stopped seeing you at '+fmtTime(fallCoord0)+'</div>'+
+      (fallInfo?'<div class="uLine" style="opacity:.75;margin-top:14px">you went '+Math.max(0.1,fallInfo.over).toFixed(1)+' past the edge'+
+        (fallInfo.sec==='THE SLING'?'. in the Sling the pull is three times the Disk\u2019s \u2014 climb before you need to.':'.')+'</div>':'');
     $('fieldNote').innerHTML='what the theory says of a spinning hole: at its inner edge, the whole future of the outside arrives at once. real holes may not allow it.';
     try{const bk0=$('btnBack');if(bk0&&!backSet){bk0.href=RETURN_URL;bk0.style.display='inline-block';}}catch(e){}
     results.style.zIndex='8';
