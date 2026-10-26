@@ -90,6 +90,10 @@ canvas{display:block}
 #btnAgain{padding:12px 44px;background:none;border:1px solid rgba(232,234,238,.4);color:#e8eaee;
   font-family:inherit;font-size:13px;letter-spacing:.34em;cursor:pointer}
 #btnAgain:active{background:rgba(232,234,238,.14)}
+#btnHand{display:none;margin:0 auto 10px;background:none;border:none;cursor:pointer;padding:6px 10px;font-family:inherit;font-size:11px;letter-spacing:.26em;color:#bfe3ff;border-bottom:1px solid rgba(191,227,255,.35)}
+#btnHand:hover,#btnHand:focus-visible{color:#fff;outline:none}
+#lineNote{position:fixed;left:0;right:0;top:42%;text-align:center;z-index:30;font-size:11px;letter-spacing:.24em;color:#bfe3ff;display:none;pointer-events:none}
+#results.arrive>#btnHand{animation-delay:3.2s}
 #btnRelive{display:block;margin:0 auto 14px;background:none;border:none;cursor:pointer;padding:6px 10px;
   font-family:inherit;font-size:11px;letter-spacing:.3em;color:rgba(232,234,238,.55);
   border-bottom:1px solid rgba(232,234,238,.18);transition:color .35s ease,border-color .35s ease}
@@ -182,11 +186,13 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 </div>
 
 <div id="relLbl"></div>
+<div id="lineNote"></div>
 <div id="results">
   <div id="resTitle"></div>
   <div id="resSub"></div>
   <div id="resList"></div>
   <div id="fieldNote"></div>
+  <button id="btnHand" type="button">hand on your line</button>
   <button id="btnRelive">RELIVE</button>
   <button id="btnAgain">AGAIN</button>
   <a id="btnBack" href="#">return to the descent &rsaquo;</a>
@@ -239,7 +245,8 @@ try{
   }
 }catch(e){}
 let backSet=false;
-const TRACK_KEY='behemoth';   // sovereign-local: the standing line lives on this device alone
+const TRACK_KEY='behemoth';
+const WORLD_REV='r1';   // bump when this world's physics changes: older lines then say so instead of pretending   // sovereign-local: the standing line lives on this device alone
 function loadLine(){try{const v=window.localStorage.getItem('moonline.line.'+TRACK_KEY);return v?parseFloat(v):null;}catch(e){return null;}}
 let splits={},splitMark=0,splitIdx=-1;   // the crossing, sector by sector
 function loadSplits(){try{const v=window.localStorage.getItem('moonline.splits.'+TRACK_KEY);return v?JSON.parse(v):null;}catch(e){return null;}}
@@ -1096,7 +1103,7 @@ window.addEventListener('pointercancel',joyEnd);
 boostBtn.addEventListener('pointerdown',function(e){e.preventDefault();initAudio();touchBoost=true;boostBtn.classList.add('hot');});
 boostBtn.addEventListener('pointerup',function(){touchBoost=false;boostBtn.classList.remove('hot');});
 boostBtn.addEventListener('pointercancel',function(){touchBoost=false;boostBtn.classList.remove('hot');});
-function inputDir(){
+function inputDirLive(){
   let x=0,y=0;
   if(keys['ArrowLeft']||keys['KeyA'])x-=1;
   if(keys['ArrowRight']||keys['KeyD'])x+=1;
@@ -1104,7 +1111,16 @@ function inputDir(){
   if(keys['ArrowDown']||keys['KeyS'])y-=1;
   return {x:clamp(x+joyX,-1,1),y:clamp(y+joyY,-1,1)};
 }
-function boostHeld(){return !!(keys['ShiftLeft']||keys['ShiftRight']||keys['Space']||touchBoost);}
+function boostHeldLive(){return !!(keys['ShiftLeft']||keys['ShiftRight']||keys['Space']||touchBoost);}
+// in the crossing, the hands are read once per tick: yours, or a line's. quantised so a line replays exactly.
+let REPLAY=null,simTick=0,tickIn={x:0,y:0,b:false};
+const Q8=function(v){return Math.round(clamp(v,-1,1)*8)/8;};
+function readHands(){
+  if(REPLAY)return REPLAY.at(simTick);
+  const d=inputDirLive();return {x:Q8(d.x),y:Q8(d.y),b:boostHeldLive()};
+}
+function inputDir(){return phase==='race'?{x:tickIn.x,y:tickIn.y}:inputDirLive();}
+function boostHeld(){return phase==='race'?tickIn.b:boostHeldLive();}
 
 // ------------------------------------------------------------ grid ui
 let sel=0;
@@ -1158,6 +1174,16 @@ $('btnLaunch').addEventListener('click',function(){initAudio();confirmPick();});
 })();
 $('btnAgain').addEventListener('click',function(){window.location.reload();});
 $('btnRelive').addEventListener('click',function(){startRelive();});
+$('btnHand').addEventListener('click',async function(e){
+  e.stopPropagation();const b=this;
+  try{
+    const url=await lineLink(parseFloat(b.dataset.t),b.dataset.k);
+    const text=TRACK_KEY+' \u00b7 '+fmtTime(parseFloat(b.dataset.t))+' \u00b7 universe '+SEED_HEX;
+    if(navigator.share&&coarse){try{await navigator.share({title:'MOONLINE \u2014 a line',text:text,url:url});b.textContent='handed on';return;}catch(err){}}
+    if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(url);b.textContent='link copied \u2014 hand it to anyone';}
+    else{window.prompt('your line',url);}
+  }catch(err){b.textContent='could not make the link';}
+});
 $('fieldNote').innerHTML='hydrogen escape: 10\u2078\u201310\u2079 grams a second \u00b7 Ehrenreich et al., Nature, 2015';
 showVehicle();
 
@@ -1178,7 +1204,7 @@ function confirmPick(){
   BAY.objs.forEach(function(o){if(o){scene.remove(o.l);scene.remove(o.pts);}});BAY.objs=[];
   document.querySelectorAll('.bayTint').forEach(function(e){e.style.transition='opacity 1.2s ease';e.style.opacity='0';});
   if(scene.fog)scene.fog.density=0.0018;
-  player.x=0;player.mesh.visible=true;
+  player.x=0;player.y=0;player.mesh.visible=true;   // every crossing starts from the same place, however long you stood in the bay
   gridUI.style.display='none';
   selRing.visible=false;
   hudEl.classList.add('on');
@@ -1307,7 +1333,7 @@ function updateCount(dt){
   if(step!==cdStep){
     cdStep=step;
     if(step<3){cdEl.textContent=String(3-step);blip(430+step*60,0.1,0.14);}
-    else{cdEl.textContent='CROSS';blip(880,0.2,0.18);phase='race';raceT=0;}
+    else{cdEl.textContent='CROSS';blip(880,0.2,0.18);phase='race';raceT=0;t=0;simTick=0;}   // the universe's clock starts with the crossing, for everyone
   }
   camera.position.set(player.x*0.55,4.6,16);
   camera.lookAt(player.x*0.8,1,-60);
@@ -1449,6 +1475,7 @@ function renderResultsList(){
 
 function updateRace(dt){
   raceT+=dt;
+  tickIn=readHands();simTick++;
   if(cdEl.textContent&&raceT>0.9)cdEl.textContent='';
   const p=player;
   const dir=inputDir();
@@ -1693,7 +1720,7 @@ function updateRace(dt){
   if(ghost){const d=ghost.d,n=d.length/3;
     while(ghostPtr<n-1&&d[(ghostPtr+1)*3]<=p.s)ghostPtr++;
     if(ghostPtr<n-1){const gT=ghostPtr/(ghost.hz||GHOST_HZ);ghostGap=raceT-gT;
-      $('hudGhost').textContent='your line '+(ghostGap>=0?'+':'\u2212')+Math.abs(ghostGap).toFixed(1);}
+      $('hudGhost').textContent=(ghost.theirs?'their line ':'your line ')+(ghostGap>=0?'+':'\u2212')+Math.abs(ghostGap).toFixed(1);}
     else $('hudGhost').textContent='';}
   // record, for the re-living
   recBuf.push(racers.reduce(function(acc,r){acc.push(r.s,r.x,r.y);return acc;},[raceT]));
@@ -1761,7 +1788,10 @@ function updateDone(dt){
     resTitle.innerHTML='While you crossed, GJ 436b breathed out between <b>'+mt(T*100)+' and '+mt(T*1000)+' tonnes</b> of hydrogen.';
     resSub.innerHTML='<div class="uSay">its star is too gentle to take the rest. it will keep almost all of its sky.</div><div class="uExp">'+fmtTime(T)+' inside an exhaled sky \u00b7 the breath lets you go.'+'</div>';
     (function(){const m=p.fTime;const sl=loadLine();
-      try{const had=ghost,kept=saveGhost(m,p.def.key);let gl='';
+      try{$('btnHand').style.display='inline-block';$('btnHand').dataset.t=String(m);$('btnHand').dataset.k=p.def.key;}catch(e){}
+      try{if(ghost&&ghost.theirs&&!REPLAY){const dd=m-ghost.t;
+          resSub.innerHTML+='<div class="uLine">'+(dd<0?'ahead of their line by '+(-dd).toFixed(1)+'s':(dd).toFixed(1)+'s behind their line')+'</div>';}}catch(e){}
+      try{const had=(ghost&&!ghost.theirs)?ghost:loadGhost(),kept=saveGhost(m,p.def.key);let gl='';
         if(!had)gl=kept?'this crossing is now your line in this universe':'';
         else if(kept)gl='ahead of your line by '+(had.t-m).toFixed(1)+'s \u00b7 this is your line now';
         else gl=(m-had.t).toFixed(1)+'s behind your line in this universe';
@@ -1896,7 +1926,7 @@ function loadGhost(){try{const v=window.localStorage.getItem(GHOST_KEY);if(!v)re
 function saveGhost(T,key){try{const old=loadGhost();if(old&&old.t<=T)return false;
   window.localStorage.setItem(GHOST_KEY,JSON.stringify({v:1,t:+T.toFixed(2),m:key,hz:GHOST_HZ,d:ghostRec}));return true;}catch(e){return false;}}
 function buildGhost(){
-  ghost=loadGhost();if(!ghost)return;
+  ghost=HANDED?{t:HANDED.time,m:HANDED.k,hz:GHOST_HZ,d:HANDED.d,theirs:true}:loadGhost();if(!ghost)return;
   try{
     const def=VEHICLES.filter(function(v){return v.key===ghost.m;})[0]||VEHICLES[0];
     ghostMesh=def.build();
@@ -1925,10 +1955,91 @@ function placeGhost(viewS){
     for(let j=0;j<N;j++){const q=ghostAt(gi-j*2);a[j*3]=q[1];a[j*3+1]=q[2];a[j*3+2]=-(q[0]-viewS);}
     ghostTrail.geometry.attributes.position.needsUpdate=true;}
 }
+// ------------------------------------------------------------ handing on a line
+// a line is the universe, the machine and your hands. the link carries them; the receiver re-runs them.
+const LINE_VER=1;
+function b64u(bytes){let s='';for(let i=0;i<bytes.length;i++)s+=String.fromCharCode(bytes[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function unb64u(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),o=new Uint8Array(b.length);for(let i=0;i<b.length;i++)o[i]=b.charCodeAt(i);return o;}
+async function squeeze(txt){const raw=new TextEncoder().encode(txt);
+  if(typeof CompressionStream==='undefined')return 'p'+b64u(raw);
+  const cs=new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return 'z'+b64u(new Uint8Array(await new Response(cs).arrayBuffer()));}
+async function unsqueeze(s){const b=unb64u(s.slice(1));
+  if(s[0]==='p')return new TextDecoder().decode(b);
+  const ds=new Blob([b]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return await new Response(ds).text();}
+function encodeHands(buf){   // run-length: most of a crossing is long stretches of the same hands
+  const out=[];let last=-1,n=0;
+  for(let i=0;i<buf.length;i+=3){
+    const c=((Math.round(buf[i]*8)+8)*17+(Math.round(buf[i+1]*8)+8))*2+(buf[i+2]?1:0);
+    if(c===last)n++;else{if(n)out.push(last.toString(36)+(n>1?'.'+n.toString(36):''));last=c;n=1;}
+  }
+  if(n)out.push(last.toString(36)+(n>1?'.'+n.toString(36):''));
+  return out.join('-');
+}
+function decodeHands(str){
+  const ticks=[];
+  str.split('-').forEach(function(tok){if(!tok)return;const p=tok.split('.');const c=parseInt(p[0],36),n=p[1]?parseInt(p[1],36):1;
+    const b=c%2,q=(c-b)/2,qy=q%17,qx=(q-qy)/17;
+    const h={x:(qx-8)/8,y:(qy-8)/8,b:!!b};for(let k=0;k<n;k++)ticks.push(h);});
+  return ticks;
+}
+function lineHash(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(36);}
+async function lineLink(T,key){
+  const body={v:LINE_VER,w:TRACK_KEY,r:WORLD_REV,s:SEED_HEX,k:key,tm:+T.toFixed(2),n:(inpBuf.length/3)|0,d:encodeHands(inpBuf)};
+  const z=await squeeze(JSON.stringify(body));
+  return window.location.origin+window.location.pathname+'?seed='+SEED_HEX+'#line='+z;
+}
+let HANDED=null,WITNESSING=false;
+// receiving a line: re-run it here, from nothing, with its hands. the time it gets is the time it is.
+(function(){
+  const m=/[#&]line=([A-Za-z0-9_\-]+)/.exec(window.location.hash||'');if(!m)return;
+  const payload=m[1],key='moonline.witness.'+lineHash(payload);
+  function note(t){try{const n=$('lineNote');n.textContent=t;n.style.display=t?'block':'none';}catch(e){}}
+  function gridSay(html){setTimeout(function(){try{$('gSub').innerHTML+='<br/><span style="color:#bfe3ff">'+html+'</span>';}catch(e){}},0);}
+  let seen=null;try{seen=JSON.parse(sessionStorage.getItem(key)||'null');}catch(e){}
+  if(seen){
+    if(seen.err){gridSay(seen.err);return;}
+    HANDED=seen;
+    const mname=(VEHICLES.filter(function(v){return v.key===seen.k;})[0]||{}).name||'';
+    gridSay('a line was handed to you \u2014 '+fmtTime(seen.tm)+' \u00b7 '+mname+'<br/>'+(seen.ok?
+      're-run here from nothing: '+fmtTime(seen.time)+'. it holds. it will fly with you.':
+      (seen.lost?'re-run here, the well kept it. it did not reproduce in this browser.':'re-run here: '+fmtTime(seen.time)+'. it did not reproduce in this browser.')));
+    return;
+  }
+  setTimeout(async function(){
+    let L=null;
+    try{L=JSON.parse(await unsqueeze(payload));}catch(e){}
+    function fail(msg){try{sessionStorage.setItem(key,JSON.stringify({err:msg}));}catch(e){}gridSay(msg);note('');}
+    if(!L||L.v!==LINE_VER||!L.d){fail('a line was handed to you, but it could not be read.');return;}
+    if(L.w!==TRACK_KEY){fail('that line was crossed in another world.');return;}
+    if(L.s!==SEED_HEX){window.location.replace(window.location.pathname+'?seed='+L.s+window.location.hash);return;}
+    if(L.r!==WORLD_REV){fail('a line was handed to you \u2014 but it was crossed in an older version of this world, and cannot be re-run here.');return;}
+    const hands=decodeHands(L.d);
+    const kIdx=VEHICLES.map(function(v){return v.key;}).indexOf(L.k);
+    if(kIdx<0||phase!=='grid'){fail('a line was handed to you, but it could not be re-run.');return;}
+    note('witnessing the line \u2014 re-running it here from nothing');
+    REPLAY={at:function(i){return hands[Math.min(i,hands.length-1)]||{x:0,y:0,b:false};}};
+    WITNESSING=true;
+    sel=kIdx;confirmPick();
+    for(let g=0;g<8&&phase==='count';g++)updateCount(0.9);
+    const N=hands.length+240;
+    while(phase==='race'&&simTick<N){
+      for(let c=0;c<900&&phase==='race'&&simTick<N;c++){t+=SIM_DT;updateRace(SIM_DT);}
+      note('witnessing the line \u2014 '+fmtTime(raceT));
+      await new Promise(function(r){setTimeout(r,0);});
+    }
+    const time=player.fTime,isLost=(typeof lost!=='undefined'&&lost);
+    const ok=player.finished&&!isLost&&Math.abs(time-L.tm)<0.05;
+    try{sessionStorage.setItem(key,JSON.stringify({tm:L.tm,time:+(time||0).toFixed(2),ok:ok,lost:isLost,k:L.k,d:ghostRec}));}catch(e){}
+    window.location.reload();
+  },400);
+})();   // a line handed to you, once witnessed: {tm, time, ok, k, d(positions)}
 let camS=null,camV=0,camGap=0,coolT=0;   // where the camera stands after the hand-off, and how fast it still drifts
 let simAcc=0;
 function tick(){
   window.requestAnimationFrame(tick);
+  if(WITNESSING)return;   // while a handed line is re-run, nothing is drawn
   const dt=Math.min(clock.getDelta(),0.1);
   if(phase==='race'){
     // fixed-step: identical ticks, identical race, on any machine
@@ -2070,6 +2181,9 @@ window.__ML={
   get phase(){return phase;},
  get doneT(){return doneT;},
   sky:function(){const sc=sectionAt(player?player.s:0);return {name:sc.name,den:sc.den,dil:sc.dil,flow:sc.flow,grav:sc.grav,light:sc.light,near:(player&&player.nearK)||0};},
+  setReplay:function(flat){const h=[];for(let i=0;i<flat.length;i+=3)h.push({x:flat[i],y:flat[i+1],b:!!flat[i+2]});REPLAY={at:function(i){return h[Math.min(i,h.length-1)];}};},
+  get lineTime(){return (player&&player.fTime)||0;},
+  linkFor:async function(flat,k,tm){const body={v:LINE_VER,w:TRACK_KEY,r:WORLD_REV,s:SEED_HEX,k:k,tm:tm,n:(flat.length/3)|0,d:encodeHands(flat)};return window.location.origin+window.location.pathname+'?seed='+SEED_HEX+'#line='+(await squeeze(JSON.stringify(body)));},
   racers:racers,
   get seed(){return SEED_HEX;},
   nerves:function(){return Object.assign({trauma:trauma},shakeLast);},

@@ -41,6 +41,14 @@ Because a crossing is built from its seed and computed at a fixed rate, the same
 seed and the same inputs reproduce the same crossing exactly, on any machine.
 A line is not believed. It is re-run, and witnessed.
 
+Your best crossing of each universe flies with you the next time, as a faint
+machine and a thread of light. To hand a line on, use **hand on your line** on
+the arrival card: it makes a link carrying the universe, the machine and your
+hands. Whoever opens it watches their browser re-run the line from nothing and
+show the time it actually gets — then the line flies beside them. If a world's
+physics has changed since, the line says it was crossed in an older version of
+that world instead of pretending.
+
 ## how it's built
 
 Each world is one HTML file. No build step, no bundler, no framework — open any
