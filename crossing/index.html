@@ -133,6 +133,31 @@ canvas{display:block}
 #lbT{top:0}#lbB{bottom:0}
 body.cine #lbT,body.cine #lbB{height:10.5vh}
 #results{z-index:6}#relLbl{z-index:6}
+/* ---- the bay, refined ---- */
+#gNext{display:none!important}
+#gDots{display:flex;gap:7px;margin:0 0 9px}
+#gDots i{display:block;width:14px;height:2px;background:rgba(232,234,238,.18);transition:background .3s ease}
+#gDots i.on{background:#e8eaee}
+.hM{display:none}
+@media (max-width:600px){
+  #gridUI{padding:44px 12px 14px}
+  #gTop{max-width:94vw}
+  .gPre,.gx{display:none}
+  #gTitle{font-size:11px;letter-spacing:.42em;margin-bottom:10px}
+  #gSub{font-size:11px;line-height:1.7;letter-spacing:.02em}
+  #gCard{width:100%;padding:12px 10px 8px;border-top:none;
+    background:linear-gradient(to bottom,rgba(4,5,10,0),rgba(4,5,10,.78) 28%,rgba(4,5,10,.9))}
+  #gRow{align-items:flex-start;gap:8px}
+  .nav{width:34px;height:38px;font-size:17px;border-color:rgba(232,234,238,.16);margin-top:16px}
+  #vName{font-size:20px;letter-spacing:.18em}
+  #vLine{font-size:11px;line-height:1.55;min-height:0;margin:4px 0 7px}
+  #vTraits{font-size:8.5px;letter-spacing:.18em;margin-bottom:6px;min-height:0}
+  #vHow{font-size:10px;line-height:1.55;min-height:0;margin-bottom:4px;color:rgba(232,234,238,.46)}
+  .bar{display:none}
+  #btnLaunch{margin-top:12px;padding:14px 0}
+  #gHint{font-size:8.5px;letter-spacing:.2em;margin-top:9px}
+  .hD{display:none}.hM{display:inline}
+}
 #hudGhost{font-size:10px;letter-spacing:.2em;color:rgba(191,227,255,.62);margin-left:14px}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
@@ -156,13 +181,14 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 
 <div id="gridUI">
   <div id="gTop">
-    <div id="gTitle" class="lbl">moonline · track 01 — the crossing</div>
-    <div id="gSub">You arrive at the station. The crossing has already begun.<br/>Destination: the Moon.<br/><span style="opacity:.34">The board still lists lines that no longer run.</span></div>
+    <div id="gTitle" class="lbl"><span class="gPre">moonline · track 01 — </span>the crossing</div>
+    <div id="gSub">You arrive at the station. The crossing has already begun.<br/>Destination: the Moon.<span class="gx"><br/><span style="opacity:.34">The board still lists lines that no longer run.</span></span></div>
   </div>
   <div id="gCard">
     <div id="gRow">
       <button class="nav" id="btnPrev">‹</button>
       <div id="gMid">
+        <div id="gDots" aria-hidden="true"></div>
         <div id="vName"></div>
         <div id="vLine"></div>
         <div id="vTraits"></div>
@@ -175,7 +201,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     </div>
     <button id="btnLaunch">LAUNCH</button>
     <div id="gNext" role="button" aria-label="Next machine"><span id="gNextLbl"></span></div>
-    <div id="gHint" class="lbl">choose your machine · then it is you against the elements</div>
+    <div id="gHint" class="lbl"><span class="hD">‹ › to choose · click the machine to launch</span><span class="hM">swipe to choose · then it is you against the elements</span></div>
   </div>
 </div>
 
@@ -1194,6 +1220,7 @@ let sel=0;
 function showVehicle(){
   const d=VEHICLES[sel];
   vName.textContent=d.name;
+  try{$('gDots').innerHTML=VEHICLES.map(function(v,i){return '<i'+(i===sel?' class="on"':'')+'></i>';}).join('');}catch(e){}
   try{$('gNextLbl').textContent='next \u00b7 '+VEHICLES[(sel+1)%VEHICLES.length].name;}catch(e){}
   vLine.textContent=d.line;
   const TRAITS={
@@ -1229,6 +1256,26 @@ $('gNext').addEventListener('click',function(e){e.stopPropagation();initAudio();
 $('btnPrev').addEventListener('click',function(){initAudio();cycle(-1);});
 $('btnNext').addEventListener('click',function(){initAudio();cycle(1);});
 $('btnLaunch').addEventListener('click',function(){initAudio();confirmPick();});
+// on a desktop, click the machine to take it. the cursor says so.
+(function(){
+  if(coarse)return;
+  let rc=null,v2=null,dx0=0,dy0=0;
+  function overCraft(e){
+    try{if(!rc){rc=new THREE.Raycaster();v2=new THREE.Vector2();}
+      const r=renderer.domElement.getBoundingClientRect();
+      v2.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);
+      rc.setFromCamera(v2,camera);
+      return rc.intersectObject(racers[sel].mesh,true).length>0;}catch(err){return false;}
+  }
+  renderer.domElement.addEventListener('pointermove',function(e){
+    if(phase!=='grid'){renderer.domElement.style.cursor='';return;}
+    renderer.domElement.style.cursor=overCraft(e)?'pointer':'';});
+  renderer.domElement.addEventListener('pointerdown',function(e){dx0=e.clientX;dy0=e.clientY;});
+  renderer.domElement.addEventListener('click',function(e){
+    if(phase!=='grid')return;
+    if(Math.abs(e.clientX-dx0)+Math.abs(e.clientY-dy0)>6)return;
+    if(overCraft(e)){initAudio();renderer.domElement.style.cursor='';confirmPick();}});
+})();
 // a quiet way out. mid-race it asks once, so a stray thumb at warp can't end a run.
 (function(){
   const b=$('btnLeave'); if(!b)return;
@@ -1391,10 +1438,10 @@ function updateGrid(dt){
   }
   updateBay(dt,true);
   const aspect=window.innerWidth/Math.max(1,window.innerHeight);
-  const R=(aspect<0.9?18:(aspect<1.3?15:13));        // close on a wide screen; back off on a phone
+  const R=(aspect<0.6?21:(aspect<0.9?19:(aspect<1.3?15:13)));        // close on a wide screen; back off on a phone
   const ang=(aspect<0.9?0.3+Math.sin(t*0.11)*0.2:0.62+Math.sin(t*0.11)*0.34);                    // a slow walk around the machine
   camera.position.set(Math.sin(ang)*R,2.5+Math.sin(t*0.07)*0.4,Math.cos(ang)*R);
-  camera.lookAt(aspect<0.9?0:-3.4,(aspect<0.9?-3.6:-0.5),0);
+  camera.lookAt(aspect<0.9?0:-3.4,(aspect<0.6?-1.6:(aspect<0.9?-3.6:-0.5)),0);
   camera.fov=(aspect<0.9?60:46);camera.updateProjectionMatrix();
   placeWorld(0);placeRacers(0,dt);
   setEngine(({ship:0.13,pendulum:0.03,sail:0,trawler:0.09})[VEHICLES[sel].key]||0.06,false,false);   // each machine's own hum; the sail has none
