@@ -101,6 +101,19 @@ canvas{display:block}
 #btnAgain{padding:12px 44px;background:none;border:1px solid rgba(232,234,238,.4);color:#e8eaee;
   font-family:inherit;font-size:13px;letter-spacing:.34em;cursor:pointer}
 #btnAgain:active{background:rgba(232,234,238,.14)}
+#btnClip{display:none;margin:0 auto 10px;background:none;border:none;cursor:pointer;padding:6px 10px;font-family:inherit;font-size:11px;letter-spacing:.26em;color:rgba(232,234,238,.6);border-bottom:1px solid rgba(232,234,238,.22)}
+#btnClip:hover,#btnClip:focus-visible{color:#fff;outline:none}
+#results.arrive>#btnClip{animation-delay:3.2s}
+body.clipping #hud,body.clipping #btnLeave,body.clipping #btnRestart,body.clipping #btnSound,body.clipping #boostBtn,
+body.clipping #results,body.clipping #lbT,body.clipping #lbB,body.clipping #gridUI,body.clipping #touchHint,body.clipping #stick,
+body.clipping #relLbl,body.clipping #announce,body.clipping #countdown,body.clipping #flash{display:none!important}
+body.clipping canvas{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%)}
+#clipPanel{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(4,5,10,.9);text-align:center;padding:24px;font-size:11px;letter-spacing:.22em;color:rgba(232,234,238,.75);line-height:2}
+#clipPanel video{max-height:58vh;max-width:86vw;margin:4px 0 18px;border:1px solid rgba(232,234,238,.12)}
+#clipPanel button,#clipPanel a{display:inline-block;margin:6px 10px;background:none;border:1px solid rgba(232,234,238,.35);color:#e8eaee;
+  font-family:inherit;font-size:11px;letter-spacing:.3em;padding:11px 22px;cursor:pointer;text-decoration:none;text-transform:uppercase}
+#clipPanel .quiet{border:none;color:rgba(232,234,238,.45);padding:8px}
 #btnHand{display:none;margin:0 auto 10px;background:none;border:none;cursor:pointer;padding:6px 10px;font-family:inherit;font-size:11px;letter-spacing:.26em;color:#bfe3ff;border-bottom:1px solid rgba(191,227,255,.35)}
 #btnHand:hover,#btnHand:focus-visible{color:#fff;outline:none}
 #lineNote{position:fixed;left:0;right:0;top:42%;text-align:center;z-index:30;font-size:11px;letter-spacing:.24em;color:#bfe3ff;display:none;pointer-events:none}
@@ -235,12 +248,14 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 
 <div id="relLbl"></div>
 <div id="lineNote"></div>
+<div id="clipPanel"></div>
 <div id="results">
   <div id="resTitle"></div>
   <div id="resSub"></div>
   <div id="resList"></div>
   <div id="fieldNote"></div>
   <button id="btnHand" type="button">hand on your line</button>
+  <button id="btnClip" type="button">make a clip</button>
   <button id="btnRelive">RELIVE</button>
   <button id="btnAgain">AGAIN</button>
   <a id="btnBack" href="#">return to the descent &rsaquo;</a>
@@ -1437,6 +1452,16 @@ setTimeout(function(){try{
   window.__mlRestart=function(){ask(true);};
 })();
 $('btnRelive').addEventListener('click',function(){startRelive();});
+$('btnClip').addEventListener('click',function(e){
+  e.stopPropagation();
+  try{
+    const n=(inpBuf.length/3)|0,sayEl=resSub.querySelector('.uSay');
+    const job={w:TRACK_KEY,r:WORLD_REV,s:SEED_HEX,k:player.def.key,d:encodeHands(inpBuf),n:n,picks:clipPicks(n),
+      uni:resTitle.innerText,say:sayEl?sayEl.innerText:''};
+    sessionStorage.setItem('moonline.clip',JSON.stringify(job));
+    window.location.hash='clip';window.location.reload();
+  }catch(err){this.textContent='could not prepare the clip';}
+});
 $('btnSound').addEventListener('pointerdown',function(e){e.stopPropagation();});
 $('btnSound').addEventListener('click',function(e){e.stopPropagation();initAudio();toggleSound();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyM'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)toggleSound();});
@@ -1484,7 +1509,7 @@ function confirmPick(){
     localStorage.setItem('moonline.taught','1');}}catch(e){}
   RNG=mulberry32(SEED);                            // from here, the universe is the seed's
   recBuf.length=0;inpBuf.length=0;
-  ghostRec=[];ghostTick=0;ghostPtr=0;ghostGap=null;buildGhost();
+  ghostRec=[];ghostTick=0;clipSpd=[];clipNear=[];ghostPtr=0;ghostGap=null;buildGhost();
   for(let i=0;i<racers.length;i++){const r=racers[i];
     r.weavePhase=rand(0,6.28);r.nextBoost=rand(8,16);
     if(r.nerve!==undefined)r.nerve=rand(0,1);
@@ -1973,6 +1998,7 @@ function updateRace(dt){
    if(p.def.key==='sail'&&(p.lit||0)<0.2)vbx=' \u2014 BECALMED';
    $('vbLabel').textContent=(VBL[p.def.key]||'')+vbx;}
   // your line: kept as you fly it, and read back against the one you flew before
+  clipSpd.push(Math.round(p.speed));clipNear.push(Math.round((p.nearK||0)*100));
   if((ghostTick++)%6===0)ghostRec.push(Math.round(p.s),Math.round(p.x*10),Math.round(p.y*10));
   if(ghost){const d=ghost.d,n=d.length/3;
     while(ghostPtr<n-1&&d[(ghostPtr+1)*3]<=p.s)ghostPtr++;
@@ -2017,7 +2043,7 @@ function updateDone(dt){
   const ak=clamp((doneT-0.2)/2.2,0,1),ae=ak*ak*(3-2*ak);   // the eye finds the machine before the body moves
   const cz=-(p.s-camS),side=(p.x>=0?1:-1),sway=0.2*ce;
   const lookY=lerp(1,-36,Math.min(1,doneT*0.25));
-  camera.position.set(lerp(p.x*0.4,p.x*0.6+side*12.5,ce)+fbm(t*0.21,7)*sway,
+  camera.position.set(lerp(p.x*0.4,p.x*0.6+side*(camera.aspect<0.8?4.5:12.5),ce)+fbm(t*0.21,7)*sway,
     lerp(4.6+p.y*0.4,1.4+p.y*0.6,ce)+fbm(t*0.17,8)*sway,lerp(16,cz*0.62+11,ce));   // alongside it first; then it pulls away from us
   camera.lookAt(lerp(p.x*0.4,p.x,ae),lerp(lookY,p.y+0.9+lookY*0.06,ae),lerp(-400,cz-22,ae));
   camera.fov=lerp(camera.fov,lerp(60,42,ce),dt*1.5);camera.updateProjectionMatrix();
@@ -2043,6 +2069,7 @@ function updateDone(dt){
     resTitle.innerHTML='While you crossed, between <b>'+tn(T*0.432)+' and '+tn(T*2.87)+' tonnes</b> of ring fell into Saturn as rain.';
     resSub.innerHTML='<div class="uSay">this track is raining away. in a few hundred million years it will not exist.</div><div class="uExp">'+fmtTime(T)+' among the rings \u00b7 the rings release you.'+'</div>';
     (function(){const m=p.fTime;const sl=loadLine();
+      try{$('btnClip').style.display='inline-block';}catch(e){}
       try{$('btnHand').style.display='inline-block';$('btnHand').dataset.t=String(m);$('btnHand').dataset.k=p.def.key;}catch(e){}
       try{if(ghost&&ghost.theirs&&!REPLAY){const dd=m-ghost.t;
           resSub.innerHTML+='<div class="uLine">'+(dd<0?'ahead of their line by '+(-dd).toFixed(1)+'s':(dd).toFixed(1)+'s behind their line')+'</div>';}}catch(e){}
@@ -2175,6 +2202,7 @@ function updateRelive(dt){
 // ------------------------------------------------------------ your line
 // the crossing you made before, in this universe. a faint machine and a thread of light where you went.
 const GHOST_KEY='moonline.ghost.'+TRACK_KEY+'.'+SEED_HEX, GHOST_HZ=20;
+let clipSpd=[],clipNear=[];
 let ghostRec=[],ghostTick=0,ghost=null,ghostMesh=null,ghostTrail=null,ghostPtr=0,ghostGap=null;
 function loadGhost(){try{const v=window.localStorage.getItem(GHOST_KEY);if(!v)return null;
   const g=JSON.parse(v);return (g&&g.d&&g.d.length>=9&&g.t>0)?g:null;}catch(e){return null;}}
@@ -2201,7 +2229,7 @@ function ghostAt(i){const d=ghost.d,n=d.length/3;i=Math.max(0,Math.min(n-1,i));
   return [d[k*3]+(d[k2*3]-d[k*3])*f,(d[k*3+1]+(d[k2*3+1]-d[k*3+1])*f)/10,(d[k*3+2]+(d[k2*3+2]-d[k*3+2])*f)/10];}
 function placeGhost(viewS){
   if(!ghost||!ghostMesh)return;
-  const on=(phase==='race');
+  const on=!(CLIP&&CLIP.ctx)&&(phase==='race');
   ghostMesh.visible=on;if(ghostTrail)ghostTrail.visible=on;
   if(!on)return;
   const gi=raceT*(ghost.hz||GHOST_HZ),g=ghostAt(gi);
@@ -2290,6 +2318,144 @@ let HANDED=null,WITNESSING=false;
     window.location.reload();
   },400);
 })();   // a line handed to you, once witnessed: {tm, time, ok, k, d(positions)}
+// ------------------------------------------------------------ a clip
+const WORLD_NAME='RINGFALL';
+function clipPicks(n){
+  const tail=Math.max(0,n-300),segs=[];   // the last two and a half seconds before the line
+  const Wn=600;let best=-1,bi=-1,sum=0;   // the fastest five seconds
+  const L=Math.min(clipSpd.length,tail-60);
+  for(let i=0;i<L;i++){sum+=clipSpd[i];if(i>=Wn)sum-=clipSpd[i-Wn];if(i>=Wn-1&&sum>best){best=sum;bi=i-Wn+1;}}
+  if(bi>=0)segs.push([bi,bi+Wn]);
+  let nb=0,ni=-1;                          // the closest pass
+  for(let i=0;i<Math.min(clipNear.length,tail-200);i++){if(clipNear[i]>nb&&!(bi>=0&&i>bi-300&&i<bi+Wn+300)){nb=clipNear[i];ni=i;}}
+  if(ni>=0&&nb>=35)segs.push([Math.max(0,ni-260),ni+160]);
+  segs.push([tail,n+999999]);             // the line, and past it
+  segs.sort(function(a,b){return a[0]-b[0];});
+  const out=[];segs.forEach(function(s){if(out.length&&s[0]<=out[out.length-1][1]+90)out[out.length-1][1]=Math.max(out[out.length-1][1],s[1]);else out.push(s.slice());});
+  return out;
+}
+let CLIP=null;const CLIP_NODES=[];
+function clipWrap(c,text,x,y,maxW,lh){
+  const words=String(text).split(' ');let line='',yy=y;const lines=[];
+  words.forEach(function(w){const tl=line?line+' '+w:w;if(c.measureText(tl).width>maxW&&line){lines.push(line);line=w;}else line=tl;});
+  if(line)lines.push(line);
+  lines.forEach(function(l,i){c.fillText(l,x,yy+i*lh);});
+  return lines.length;
+}
+function clipPanel(html){const p=$('clipPanel');p.innerHTML=html;p.style.display=html?'flex':'none';}
+function clipCancel(){try{sessionStorage.removeItem('moonline.clip');}catch(e){}
+  window.location.replace(window.location.pathname+window.location.search);}
+function clipFilm(){
+  const job=CLIP.job;
+  initAudio();try{actx.resume();}catch(e){}
+  try{CLIP.dest=actx.createMediaStreamDestination();CLIP_NODES.forEach(function(n){try{n.connect(CLIP.dest);}catch(e){}});}catch(e){CLIP.dest=null;}
+  clipPanel('');
+  document.body.classList.add('clipping');
+  // a vertical frame, whatever the screen
+  renderer.setPixelRatio(1);renderer.setSize(720,1280,false);
+  const fit=Math.min(window.innerWidth/720,window.innerHeight/1280);
+  renderer.domElement.style.width=Math.round(720*fit)+'px';renderer.domElement.style.height=Math.round(1280*fit)+'px';
+  camera.aspect=720/1280;camera.updateProjectionMatrix();
+  CLIP.cvs=document.createElement('canvas');CLIP.cvs.width=720;CLIP.cvs.height=1280;CLIP.ctx=CLIP.cvs.getContext('2d');
+  const stream=CLIP.cvs.captureStream(30);
+  try{if(CLIP.dest)CLIP.dest.stream.getAudioTracks().forEach(function(tr){stream.addTrack(tr);});}catch(e){}
+  const types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm'];
+  CLIP.mime=types.filter(function(t){return window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t);})[0]||'';
+  CLIP.chunks=[];
+  CLIP.rec=new MediaRecorder(stream,CLIP.mime?{mimeType:CLIP.mime,videoBitsPerSecond:6000000}:{videoBitsPerSecond:6000000});
+  CLIP.rec.ondataavailable=function(e){if(e.data&&e.data.size)CLIP.chunks.push(e.data);};
+  CLIP.rec.onstop=clipDone;
+  CLIP.rec.start(250);CLIP.rec.pause();
+  // re-run the crossing from its hands
+  const hands=decodeHands(job.d);
+  REPLAY={at:function(i){return hands[Math.min(i,hands.length-1)]||{x:0,y:0,b:false};}};
+  sel=VEHICLES.map(function(v){return v.key;}).indexOf(job.k);if(sel<0)sel=0;
+  confirmPick();for(let g=0;g<8&&phase==='count';g++)updateCount(0.9);
+  CLIP.segI=0;clipSeek(job.picks[0][0]);
+}
+async function clipSeek(tick){
+  CLIP.stage='seek';WITNESSING=true;
+  try{CLIP.rec.state==='recording'&&CLIP.rec.pause();}catch(e){}
+  try{actx.suspend();}catch(e){}
+  while(phase==='race'&&simTick<tick){
+    for(let c=0;c<900&&phase==='race'&&simTick<tick;c++){t+=SIM_DT;updateRace(SIM_DT);}
+    await new Promise(function(r){setTimeout(r,0);});
+  }
+  clock.getDelta();simAcc=0;
+  try{actx.resume();}catch(e){}
+  WITNESSING=false;CLIP.stage='film';CLIP.started=false;
+}
+function clipFrame(){
+  const c=CLIP.ctx,job=CLIP.job,now=performance.now();
+  c.drawImage(renderer.domElement,0,0,720,1280);
+  if(CLIP.stage==='film'){
+    if(!CLIP.started){CLIP.started=true;try{CLIP.rec.state==='paused'&&CLIP.rec.resume();}catch(e){}}
+    try{if(annEl.classList.contains('show')&&phase==='race'){c.fillStyle='rgba(232,234,238,.8)';c.font='500 22px "IBM Plex Mono",monospace';c.textAlign='center';
+      c.fillText(annEl.textContent.split('').join('\u2009'),360,250);}}catch(e){}
+    const seg=job.picks[CLIP.segI];
+    if(phase==='race'&&seg&&simTick>=seg[1]){CLIP.segI++;if(CLIP.segI<job.picks.length)clipSeek(job.picks[CLIP.segI][0]);}
+    if(phase==='done'){
+      const h=1280*0.105*Math.min(1,doneT/2.2);c.fillStyle='#000';c.fillRect(0,0,720,h);c.fillRect(0,1280-h,720,h);
+      if(doneT>4.6){CLIP.stage='cards';CLIP.c0=now;}
+    }
+  }
+  if(CLIP.stage==='cards'){
+    const s=(now-CLIP.c0)/1000;
+    c.fillStyle='rgba(3,4,8,'+Math.min(0.86,s*0.9)+')';c.fillRect(0,0,720,1280);
+    c.textAlign='center';
+    if(s<4.2){   // the universe speaks
+      const a=Math.min(1,s/0.8)*Math.min(1,(4.2-s)/0.5);
+      c.fillStyle='rgba(240,242,246,'+a+')';c.font='500 31px "IBM Plex Mono",monospace';
+      const nl=clipWrap(c,job.uni,360,560,600,46);
+      if(job.say){c.fillStyle='rgba(232,234,238,'+(a*0.6)+')';c.font='400 19px "IBM Plex Mono",monospace';clipWrap(c,job.say,360,560+nl*46+40,560,30);}
+    }else if(s<7.6){   // the world, and the invitation
+      const a=Math.min(1,(s-4.2)/0.7);
+      c.fillStyle='rgba(240,242,246,'+a+')';c.font='600 46px "IBM Plex Mono",monospace';c.fillText(WORLD_NAME.split('').join('\u200a'),360,600);
+      c.font='400 22px "IBM Plex Mono",monospace';c.fillStyle='rgba(232,234,238,'+(a*0.75)+')';c.fillText('a line, re-run',360,660);
+      c.font='400 19px "IBM Plex Mono",monospace';c.fillStyle='rgba(191,227,255,'+(a*0.85)+')';c.fillText('moonline.codifiedresonance.com',360,760);
+    }else if(CLIP.stage==='cards'){CLIP.stage='stopping';try{CLIP.rec.stop();}catch(e){clipDone();}}
+  }
+}
+async function clipDone(){
+  CLIP.stage='done';
+  const type=(CLIP.mime||'video/webm').split(';')[0],ext=type.indexOf('mp4')>=0?'mp4':'webm';
+  const blob=new Blob(CLIP.chunks,{type:type});
+  const file=new File([blob],'moonline-'+TRACK_KEY+'.'+ext,{type:type});
+  const url=URL.createObjectURL(blob);
+  let link='';try{link=await lineLink(player.fTime,CLIP.job.k);}catch(e){}
+  renderer.domElement.style.width='';renderer.domElement.style.height='';document.body.classList.remove('clipping');
+  try{renderer.setPixelRatio(typeof dprNow!=='undefined'?dprNow:Math.min(window.devicePixelRatio||1,2));}catch(e){}renderer.setSize(window.innerWidth,window.innerHeight);
+  camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();
+  const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]}));
+  clipPanel('<div>'+WORLD_NAME.toLowerCase()+' \u00b7 a line, re-run</div><video src="'+url+'" controls playsinline autoplay muted loop></video>'+
+    '<div>'+(canShare?'<button id="clipShare" type="button">share</button>':'')+
+    '<a id="clipSave" href="'+url+'" download="moonline-'+TRACK_KEY+'.'+ext+'">save</a>'+
+    '<button id="clipDoneBtn" class="quiet" type="button">done</button></div>'+
+    (ext==='webm'?'<div style="opacity:.5;font-size:10px;margin-top:8px">this browser made a webm; some apps want mp4</div>':''));
+  try{$('clipShare').addEventListener('click',async function(){
+    try{await navigator.share({files:[file],title:'MOONLINE \u2014 '+WORLD_NAME.toLowerCase(),text:WORLD_NAME.toLowerCase()+' \u2014 a line, re-run'+(link?' \u00b7 fly it: '+link:'')});}catch(e){}});}catch(e){}
+  $('clipDoneBtn').addEventListener('click',clipCancel);
+}
+(function(){
+  if(!/[#&]clip\b/.test(window.location.hash||''))return;
+  let job=null;try{job=JSON.parse(sessionStorage.getItem('moonline.clip')||'null');}catch(e){}
+  if(!job||job.w!==TRACK_KEY||!job.picks)return;
+  if(job.s!==SEED_HEX){window.location.replace(window.location.pathname+'?seed='+job.s+'#clip');return;}
+  CLIP={job:job,stage:null};
+  // everything the crossing says goes to you and to the clip
+  const oc=AudioNode.prototype.connect;
+  AudioNode.prototype.connect=function(dst){
+    const r=oc.apply(this,arguments);
+    try{if(typeof AudioDestinationNode!=='undefined'&&dst instanceof AudioDestinationNode){CLIP_NODES.push(this);if(CLIP&&CLIP.dest)oc.call(this,CLIP.dest);}}catch(e){}
+    return r;};
+  setTimeout(function(){
+    document.body.classList.add('clipping');
+    clipPanel('<div>'+WORLD_NAME.toLowerCase()+' \u00b7 your crossing, ready to re-run</div><div style="opacity:.55;margin-bottom:14px">the fastest stretch, the closest pass, the line \u2014 then the universe</div>'+
+      '<div><button id="clipGo" type="button">film it</button><button id="clipNo" class="quiet" type="button">cancel</button></div>');
+    $('clipGo').addEventListener('click',function(e){e.stopPropagation();clipFilm();});
+    $('clipNo').addEventListener('click',function(e){e.stopPropagation();clipCancel();});
+  },80);
+})();
 let camS=null,camV=0,camGap=0,coolT=0;   // where the camera stands after the hand-off, and how fast it still drifts
 let simAcc=0;
 function tick(){
@@ -2370,6 +2536,7 @@ function tick(){
   }else renderer.render(scene,camera);
   if(shook)camera.quaternion.copy(_shQ);
   if(phase==='grid')renderPreview();
+  if(CLIP&&CLIP.ctx&&(CLIP.stage==='film'||CLIP.stage==='cards'))clipFrame();
   if(lead){
     scene.position.z=0;
     for(let i=0;i<racers.length;i++)racers[i].mesh.position.z+=racers[i].speed*lead;
@@ -2426,6 +2593,7 @@ function updateSpeedFeel(dt){
 tick();
 
 window.addEventListener('resize',function(){
+  if(CLIP&&CLIP.ctx&&CLIP.stage!=='done')return;   // while filming, the frame stays vertical
   camera.aspect=window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
