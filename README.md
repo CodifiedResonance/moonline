@@ -30,6 +30,12 @@ Earth days it becomes a new one. The grid names it: `universe 31786 · this week
 A specific universe can be visited directly with `?seed=` — for example
 `/crossing/?seed=7F3A`.
 
+## playing
+
+Arrows or WASD steer; space holds (each machine's hold is its own); R restarts; M mutes.
+A controller works too: left stick steers, A or a trigger holds, Start restarts. On a phone,
+drag anywhere to steer and hold the button bottom right.
+
 ## the line
 
 Cross a world and you may leave your line: a recording of exactly how you
@@ -40,6 +46,10 @@ no account, no ladder, no season.
 Because a crossing is built from its seed and computed at a fixed rate, the same
 seed and the same inputs reproduce the same crossing exactly, on any machine.
 A line is not believed. It is re-run, and witnessed.
+
+So that a line re-runs the same in every browser, the simulation does its own sine, cosine and
+arctangent (ported from fdlibm, using only arithmetic IEEE-754 defines exactly) rather than the
+browser's, which the JavaScript standard allows to differ in the last digits.
 
 Your best crossing of each universe flies with you the next time, as a faint
 machine and a thread of light. To hand a line on, use **hand on your line** on
