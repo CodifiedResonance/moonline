@@ -59,7 +59,7 @@ show the time it actually gets — then the line flies beside them. If a world's
 physics has changed since, the line says it was crossed in an older version of
 that world instead of pretending.
 
-**make a clip** films your crossing for sharing: the page re-runs your line and films it
+**let it travel** films your crossing for sharing: the page re-runs your line and films it
 vertically — the fastest stretch, the closest pass, the line and the hand-off — then the universe
 speaks, then the world's name and the invitation. Not a screen capture: a line, re-run.
 
