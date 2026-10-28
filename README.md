@@ -101,3 +101,7 @@ is the world's name.
 The page on codifiedresonance.com that leads into the worlds is served from here too: `descent/descent.css`
 and `descent/descent.js`. The embed on the site is a few lines that load them, so the descent changes
 when this repo is pushed, with nothing to paste.
+
+The Last Platform's node page (`codifiedresonance.com/last-platform/node`) is served the same way, from
+`platform/node.css` and `platform/node.js`. To add a game to the platform, add one object to the
+`EMERGENCES` array in `platform/node.js` and push.

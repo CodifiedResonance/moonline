@@ -1,0 +1,285 @@
+/* THE LAST PLATFORM — the node. Served from moonline.codifiedresonance.com/platform/ and loaded by
+   the embed on codifiedresonance.com/last-platform/node. Add a game: the EMERGENCES array, below. */
+
+:root{
+  --rail:23%;                      /* where the rail sits: a baseline, not a crossbar */
+  --void:#020408;
+  --deep:#04050a;
+  --white:#F3F6FF;
+  --dim:#8FA6C8;
+  --faint:#4A5D78;
+  --hair:rgba(143,166,200,.15);
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Monaco,Consolas,monospace;
+  --mark:"Arial Black","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--void);
+  color:var(--white);
+  font-family:var(--mono);
+  overflow:hidden;                 /* the descent owns the scrolling */
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- ambient terrain: starfield + scanline ---------- */
+.lp-sky,.lp-scan{position:fixed;inset:0;pointer-events:none}
+.lp-sky{z-index:9000;background:var(--void)}
+.lp-sky span{
+  position:absolute;inset:-20% -40%;
+  background-repeat:repeat;
+  will-change:transform;
+}
+.lp-sky .s1{
+  background-image:
+    radial-gradient(1.4px 1.4px at 20% 30%,rgba(255,255,255,.85),transparent),
+    radial-gradient(1.2px 1.2px at 70% 60%,rgba(255,255,255,.7),transparent),
+    radial-gradient(1.6px 1.6px at 45% 80%,rgba(255,255,255,.6),transparent),
+    radial-gradient(1.2px 1.2px at 85% 20%,rgba(255,255,255,.75),transparent);
+  background-size:340px 280px;
+  opacity:.7;
+}
+.lp-sky .s2{
+  background-image:
+    radial-gradient(1px 1px at 30% 50%,rgba(180,205,255,.6),transparent),
+    radial-gradient(1px 1px at 80% 15%,rgba(180,205,255,.45),transparent),
+    radial-gradient(1px 1px at 55% 70%,rgba(180,205,255,.5),transparent);
+  background-size:190px 160px;
+  opacity:.45;
+}
+.lp-sky .s3{   /* the faint colour of deep field */
+  background:
+    radial-gradient(circle at 18% 24%,rgba(90,140,230,.10),transparent 55%),
+    radial-gradient(circle at 78% 72%,rgba(150,110,210,.08),transparent 55%);
+}
+.lp-scan{
+  z-index:9003;
+  background-image:repeating-linear-gradient(
+    to bottom,rgba(255,255,255,.016) 0 1px,transparent 1px 4px);
+  mix-blend-mode:soft-light;opacity:.5;
+}
+
+/* ============================================================
+   INTRO CINEMATIC — kept as it was, wording corrected
+   ============================================================ */
+#lp-cinematic{
+  position:fixed;inset:0;z-index:9999;
+  background:#000;
+  display:flex;align-items:center;justify-content:center;
+  color:#DDE2F5;letter-spacing:.16em;text-transform:uppercase;
+  overflow:hidden;
+}
+#lp-cinematic::before{
+  content:"";position:absolute;inset:-20%;
+  background:
+    radial-gradient(circle at 50% 20%,rgba(90,150,255,.25) 0,transparent 50%),
+    radial-gradient(circle at 10% 80%,rgba(255,140,80,.16) 0,transparent 46%);
+  opacity:.22;mix-blend-mode:screen;
+}
+.lp-cine-inner{position:relative;text-align:center;padding:40px 18px}
+.lp-line{opacity:0;margin:8px 0;font-size:13px;transition:opacity .55s ease;white-space:nowrap}
+.lp-line-main{font-size:18px;letter-spacing:.22em}
+.lp-loading::after{
+  content:"";display:inline-block;width:32px;text-align:left;
+  animation:lpDots 1.4s steps(3,end) infinite;
+}
+@keyframes lpDots{0%{content:""}33%{content:"."}66%{content:".."}100%{content:"..."}}
+.lp-line.is-visible{opacity:1}
+#lp-cinematic.lp-done{animation:lpFadeOut 900ms ease forwards}
+@keyframes lpFadeOut{to{opacity:0;visibility:hidden}}
+.lp-welcome{animation:lpWelcome 2.2s ease-in-out infinite}
+@keyframes lpWelcome{
+  0%,82%,100%{text-shadow:none;opacity:.92}
+  10%{text-shadow:0 0 8px rgba(255,255,255,.75);opacity:1}
+  55%{text-shadow:0 0 14px rgba(255,255,255,.55);opacity:.96}
+}
+
+/* ============================================================
+   THE DESCENT — horizontal, alive
+   ============================================================ */
+.lp-descent{
+  position:fixed;inset:0;z-index:9002;
+  overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  opacity:0;transition:opacity 1.2s ease;
+}
+.lp-descent::-webkit-scrollbar{display:none}
+.lp-descent.is-open{opacity:1}
+.lp-descent.is-dragging{cursor:grabbing}
+
+.lp-strip{
+  position:relative;
+  display:flex;align-items:stretch;
+  height:100%;
+  padding:0 clamp(28px,7vw,140px);
+  width:max-content;
+}
+
+/* the rail: one hairline running the whole length of the platform */
+.lp-rail{
+  position:absolute;left:0;right:0;bottom:var(--rail);
+  height:1px;pointer-events:none;
+  /* the signal runs out before the platform does */
+  background:linear-gradient(90deg,var(--hair) 0,var(--hair) 78%,transparent 100%);
+}
+/* the carrier pulse — the signature. it travels, and the marks catch it. */
+.lp-pulse{
+  position:absolute;top:-1px;left:0;width:26vw;min-width:200px;height:3px;
+  background:linear-gradient(90deg,
+    transparent,
+    rgba(143,166,200,.5) 35%,
+    var(--white) 50%,
+    rgba(143,166,200,.5) 65%,
+    transparent);
+  filter:blur(.4px);
+  animation:lpCarry var(--carry,16s) linear infinite;
+}
+@keyframes lpCarry{
+  0%  {transform:translateX(-26vw);opacity:0}
+  6%  {opacity:1}
+  72% {opacity:1}
+  94% {opacity:0}
+  100%{transform:translateX(var(--carry-end,100vw));opacity:0}
+}
+
+/* ---------- an emergence ---------- */
+.lp-emergence{
+  position:relative;
+  flex:0 0 auto;
+  scroll-snap-align:center;
+  display:flex;flex-direction:column;justify-content:center;
+  min-width:min(94vw,980px);
+  padding-right:clamp(40px,9vw,150px);
+  text-decoration:none;color:inherit;
+  outline:none;
+}
+.lp-inscription{
+  font-size:10px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--dim);opacity:.8;margin-bottom:clamp(16px,2.6vw,26px);
+  padding-left:.34em;
+}
+/* the mark: each game brings its own. the platform only frames it. */
+.lp-markwrap{position:relative;display:block;width:max-content;max-width:100%;line-height:.9;transform:skewX(-11deg);transform-origin:left center}
+.lp-markword{
+  position:relative;z-index:2;display:block;
+  font-family:var(--mark);font-weight:900;
+  font-size:clamp(46px,10.5vw,128px);letter-spacing:-.02em;
+  background:linear-gradient(176deg,#FFFFFF 0%,#EAF0FF 42%,#B7C2DB 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 14px 30px rgba(0,0,0,.55));
+  transition:filter .6s ease;
+}
+.lp-crater{
+  position:absolute;z-index:1;border-radius:50%;
+  background:radial-gradient(circle at 50% 34%,
+    rgba(255,255,255,.30) 0%,rgba(150,165,195,.10) 34%,
+    rgba(6,10,20,.55) 66%,rgba(6,10,20,0) 78%);
+  box-shadow:inset 0 2px 3px rgba(255,255,255,.35),inset 0 -3px 6px rgba(0,0,0,.5);
+  mix-blend-mode:screen;opacity:.68;pointer-events:none;
+  transition:opacity .6s ease;
+}
+.lp-line-copy{
+  max-width:46ch;margin:clamp(20px,3vw,32px) 0 0;
+  font-size:clamp(12px,1.25vw,14px);line-height:1.85;letter-spacing:.02em;
+  color:#C3CFE6;
+}
+.lp-enter{
+  display:inline-block;margin-top:clamp(20px,3vw,30px);
+  font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--white);padding-bottom:3px;
+  border-bottom:1px solid rgba(243,246,255,.3);
+  transition:border-color .45s ease,letter-spacing .45s ease;
+  align-self:flex-start;
+}
+.lp-arrow{display:inline-block;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+
+/* the node on the rail, beneath each mark */
+.lp-node{
+  position:absolute;left:0;bottom:var(--rail);
+  width:7px;height:7px;border-radius:50%;
+  background:var(--dim);transform:translate(-3px,3px);
+  box-shadow:0 0 0 0 rgba(243,246,255,0);
+}
+
+/* catching the carrier: each mark brightens as the pulse reaches it */
+.lp-emergence.lp-live .lp-markword{animation:lpCatchMark var(--carry,16s) linear infinite var(--catch,0s)}
+.lp-emergence.lp-live .lp-node{animation:lpCatchNode var(--carry,16s) linear infinite var(--catch,0s)}
+@keyframes lpCatchMark{
+  0%,86%,100%{filter:drop-shadow(0 14px 30px rgba(0,0,0,.55))}
+  4%{filter:drop-shadow(0 0 26px rgba(150,190,255,.5)) drop-shadow(0 14px 30px rgba(0,0,0,.55))}
+  12%{filter:drop-shadow(0 14px 30px rgba(0,0,0,.55))}
+}
+@keyframes lpCatchNode{
+  0%,86%,100%{background:var(--dim);box-shadow:0 0 0 0 rgba(243,246,255,0)}
+  4%{background:var(--white);box-shadow:0 0 14px 3px rgba(200,225,255,.55)}
+  14%{background:var(--dim);box-shadow:0 0 0 0 rgba(243,246,255,0)}
+}
+
+/* hover / focus */
+.lp-emergence:hover .lp-markword,.lp-emergence:focus-visible .lp-markword{
+  filter:drop-shadow(0 0 30px rgba(150,190,255,.45)) drop-shadow(0 14px 30px rgba(0,0,0,.55));
+}
+.lp-emergence:hover .lp-crater,.lp-emergence:focus-visible .lp-crater{opacity:.9}
+.lp-emergence:hover .lp-enter,.lp-emergence:focus-visible .lp-enter{
+  border-color:rgba(243,246,255,.8);letter-spacing:.32em;
+}
+.lp-emergence:hover .lp-arrow,.lp-emergence:focus-visible .lp-arrow{transform:translateX(5px)}
+.lp-emergence:focus-visible{outline:1px solid rgba(150,190,255,.6);outline-offset:22px;border-radius:3px}
+
+/* ---------- the unformed end of the rail ---------- */
+.lp-unformed{
+  position:relative;
+  flex:0 0 auto;
+  min-width:100vw;                    /* the unformed is a place, not a margin */
+  padding-left:min(46vw,620px);
+  padding-right:clamp(28px,7vw,140px);
+  scroll-snap-align:center;
+}
+.lp-codex{
+  position:absolute;left:min(46vw,620px);bottom:var(--rail);
+  transform:translateY(-26px);
+  font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--dim);opacity:.5;line-height:2.4;
+  max-width:34ch;
+  text-wrap:balance;
+}
+/* the last thing on the rail catches the same light the marks do */
+.lp-codex.lp-live{animation:lpCatchCodex var(--carry,16s) linear infinite var(--catch,0s)}
+@keyframes lpCatchCodex{
+  0%,88%,100%{opacity:.5;color:var(--dim);text-shadow:none}
+  5%  {opacity:1;color:var(--white);text-shadow:0 0 14px rgba(180,210,255,.4)}
+  22% {opacity:.5;color:var(--dim);text-shadow:none}
+}
+
+/* ---------- fixed chrome: the platform's own labels ---------- */
+.lp-chrome{
+  position:fixed;z-index:9004;pointer-events:none;
+  font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint);
+  opacity:0;transition:opacity 1.4s ease;
+}
+.lp-chrome.is-open{opacity:1}
+.lp-chrome-tl{top:clamp(22px,4vh,40px);left:clamp(24px,5vw,56px)}
+.lp-chrome-br{
+  bottom:clamp(22px,4vh,40px);right:clamp(24px,5vw,56px);
+  display:flex;align-items:center;gap:10px;
+}
+.lp-travel{display:inline-block;animation:lpNudge 3.4s ease-in-out infinite}
+@keyframes lpNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+
+@media (max-width:640px){
+  :root{--rail:16%}
+  .lp-emergence{min-width:94vw;padding-right:20px}
+  .lp-unformed{min-width:94vw}
+  .lp-chrome-br{font-size:9px;letter-spacing:.24em}
+  .lp-line-copy{max-width:34ch}
+}
+@media (prefers-reduced-motion:reduce){
+  .lp-pulse,.lp-travel,.lp-codex,.lp-welcome,.lp-loading::after{animation:none}
+  .lp-codex{opacity:.75}
+  .lp-emergence.lp-live .lp-markword,.lp-emergence.lp-live .lp-node{animation:none}
+  .lp-pulse{opacity:.35}
+  *{transition-duration:.01ms !important}
+}
