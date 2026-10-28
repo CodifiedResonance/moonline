@@ -1,6 +1,6 @@
 # moonline
 
-Five crossings. One intensement — a re-feel of the forces at play in the universe:
+Five crossings, and the voyage beyond them. One intensement — a re-feel of the forces at play in the universe:
 impact, light, heat, current, gravity. The science is the antagonist.
 
 MOONLINE emerges through **The Last Platform**, the fifth world of
@@ -19,6 +19,24 @@ MOONLINE emerges through **The Last Platform**, the fifth world of
 | 03 | Ironlight | KELT-9b, the hottest known orbit | heat · you cannot dodge it, only budget it |
 | 04 | The Behemoth | GJ 436b, an exhaled sky | current · the medium itself moves you |
 | 05 | The Well | a spinning supermassive black hole | gravity · the deep line costs you time itself |
+
+Edition I is the proving ground. **Edition II is the voyage**, outward from home in order of
+real distance. Its first world is built:
+
+| | world | place | force |
+|---|---|---|---|
+| II | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · the beam turns once every 1.3373 s, and acts on *when* |
+
+In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
+honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
+hours, whole in a day, and flying sooner is a request for early release. Each crossing carries
+**cargo** that must arrive whole (in Metronome, a clock kept in phase with the beat): exposure wears
+it down over time, impact all at once. A line carries the machine's condition at the start, so a
+scarred machine re-runs scarred.
+
+**hand the machine on** gives someone your machine, not just your line: every hand's line, and the
+condition each began with. Whoever opens it re-runs the whole chain from nothing, hand by hand, then
+flies the machine as the last hand left it. No crew works on a machine between hands.
 
 ## the universe
 
