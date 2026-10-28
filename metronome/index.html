@@ -201,6 +201,10 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
   #gHint{font-size:8.5px;letter-spacing:.2em;margin-top:9px}
   .hD{display:none}.hM{display:inline}
 }
+#chart{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(340px,46vw);pointer-events:none}
+#chartC{display:block;width:100%;height:56px}
+#chartLbl{font-size:8.5px;letter-spacing:.26em;color:rgba(232,234,238,.34);text-align:center;margin-top:3px;text-transform:uppercase}
+@media (max-width:600px){#chart{top:104px;bottom:auto;width:58vw}}
 #hudBeat{font-size:10px;letter-spacing:.2em;color:rgba(200,222,255,.62);margin-left:14px}
 #hudCargo{font-size:9px;letter-spacing:.2em;color:rgba(232,234,238,.42);margin-top:5px}
 #gCrew{display:none;font-size:10px;line-height:1.75;letter-spacing:.06em;color:rgba(232,234,238,.6);margin:2px 0 8px;
@@ -227,6 +231,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     <div id="heatWrap"><div id="heatFill"></div></div>
     <div id="hudCargo"></div>
   </div>
+  <div id="chart"><canvas id="chartC" width="600" height="92"></canvas><div id="chartLbl">chart · CP 1919 · 81.5 MHz</div></div>
   <div id="hintKeys" class="lbl">arrows / wasd steer · space hold · r restart · m sound</div>
 </div>
 
@@ -240,7 +245,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 <div id="gridUI">
   <div id="gTop">
     <div id="gTitle" class="lbl"><span class="gPre">moonline · edition ii — </span>metronome</div>
-    <div id="gSub">You arrive in the beam of the first pulsar ever found. It turns once every 1.34 seconds.<br/>Destination: out past its lighthouse.</div>
+    <div id="gSub">The first pulsar ever found turns once every 1.34 seconds. You will not see its beam.<br/>You will hear it, and read it on the chart. Destination: out past it.</div>
   </div>
   <div id="gCard">
     <div id="gRow">
@@ -911,7 +916,7 @@ function spawnStreak(playerS,dir){
   w.mesh.visible=true; wstreaks.push(w);
 }
 
-// ---- CP 1919: twenty kilometres of neutron star you will never see, and the beam, which you will.
+// ---- CP 1919: twenty kilometres of neutron star, a steady point of light. its beam is radio: no eye has seen it.
 const psrCore=new THREE.Mesh(new THREE.SphereGeometry(4.5,16,16),matGlow(0xf2f7ff,1.0));
 function glowSprite(size,col,op){   // a soft glow, not a ball: a sprite where the engine has one
   try{if(THREE.Sprite&&THREE.SpriteMaterial&&SPRITE_STAR){
@@ -941,9 +946,7 @@ function beamCone(len,halfW,halfH,col,op){
   m.scale.set(1,1,halfH/halfW);
   return m;
 }
-const beamMain=beamCone(13000,0.2,0.045,0xbad6ff,0.5);beamG.add(beamMain);
-const beamCoreL=beamCone(12000,0.045,0.012,0xffffff,0.75);beamG.add(beamCoreL);
-const beamOther=beamCone(3800,0.2,0.2,0x7fa6ff,0.16);beamOther.rotation.x=-Math.PI/2+2.3;beamG.add(beamOther);
+// (the beam is not drawn. it is heard in the receiver and read on the chart.)
 let beamFlash=0,beatPulse=0;
 // gentler still for anyone who has asked their device for less motion
 const SOFT=(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)?0.5:1;
@@ -1693,13 +1696,9 @@ function placeWorld(viewS){
   }
   // the beam turns on the universe's clock: the sim's in the crossing, the same clock everywhere else
   beamG.rotation.y=Math.PI-beamAngle(t);
-  {const nr=(player&&(phase==='race'||phase==='done'))?(player.beamNear||0):0;
-   const cl=(player&&(phase==='race'||phase==='done'))?(player.beamClose||1):1;
-   beamMain.material.opacity=0.34*cl*(1-0.95*nr);beamCoreL.material.opacity=0.5*cl*(1-0.98*nr);}
   const dz=viewS-PSR.s,far=Math.sqrt(dz*dz+PSR.x*PSR.x);
-  const hs=clamp(far/420,1,28)*(1+beatPulse*0.12);   // a point of light, however far; it flares on each beat that reaches you
+  const hs=clamp(far/420,1,28);   // a point of light, however far. it does not flare: the beat is not light
   [psrHalo,psrHalo2].forEach(function(h){const b=h.userData.base;if(b)h.scale.set(b*hs,b*hs,1);else h.scale.set(hs,hs,hs);});
-  psrCore.scale.set(1+beatPulse*0.1,1+beatPulse*0.1,1+beatPulse*0.1);
   galaxy.rotation.z+=0.00004;
 }
 function placeRacers(viewS,dt){
@@ -1856,7 +1855,7 @@ function updateHazards(dt,viewS){
     const a=asteroids[i];
     a.x+=a.vx*dt;
     if(a.mesh.material&&a.mesh.material!==astMat){const bo=beamOn(t,a.s,a.x,a.y);   // seen in the flash of the beam, and then not
-      a.lit=Math.max((a.lit||0)-dt*1.4,bo.on*(0.35+0.65*bo.str));a.mesh.material.emissiveIntensity=0.05+a.lit*0.75*SOFT;}
+      a.lit=Math.max((a.lit||0)-dt*1.4,bo.on*(0.35+0.65*bo.str));a.mesh.material.emissiveIntensity=0.05+a.lit*0.2*SOFT;}
     a.mesh.rotation.x+=a.rx*dt;a.mesh.rotation.y+=a.ry*dt;
     a.mesh.position.set(a.x,a.y,-(a.s-viewS));
     if(a.s<viewS-50){a.mesh.visible=false;astFree.push(a);asteroids.splice(i,1);continue;}
@@ -2094,8 +2093,7 @@ function updateRace(dt){
   beamFlash+=(hitB-beamFlash)*Math.min(1,dt*(hitB>beamFlash?6:1.6));beatPulse=Math.max(0,beatPulse-dt*2.2);
   p.beamNear=clamp(1-Math.abs(bo.d)/1.2,0,1)*(bo.r<2600?1:clamp((5200-bo.r)/2600,0,1));
   p.beamClose=clamp((bo.r-300)/2600,0.28,1);   // close to the star the beam is all around you: it is drawn quieter there
-  ambientL.intensity+=beamFlash*0.2*SOFT;sun.intensity+=beamFlash*0.1*SOFT;
-  iceMat.opacity=0.12+denLvl*0.3+beamFlash*0.1*SOFT;
+  iceMat.opacity=0.12+denLvl*0.3;   // the light does not change on the beat
   veilEl.style.opacity=0;
   // dust
   if(p.carryT===undefined)p.carryT=0;
@@ -2793,10 +2791,37 @@ function tick(){
   }else renderer.render(scene,camera);
   if(shook)camera.quaternion.copy(_shQ);
   if(phase==='grid')renderPreview();
+  if(phase==='race'||phase==='done')drawChart(dt);
   if(CLIP&&CLIP.ctx&&(CLIP.stage==='film'||CLIP.stage==='cards'))clipFrame();
   if(lead){
     scene.position.z=0;
     for(let i=0;i<racers.length;i++)racers[i].mesh.position.z+=racers[i].speed*lead;
+  }
+}
+// ---------------- the chart ----------------
+// a pen on moving paper: receiver noise, and a kick each time the beam crosses you, as it was first seen
+// in 1967. ahead of the pen, a faint mark where the next pulse will land. drawn only: the sim never reads it.
+const CH={buf:new Float32Array(240),acc:0,head:0,c:null,g:null,noise:0};
+function drawChart(dt){
+  if(!player)return;
+  if(!CH.g){CH.c=$('chartC');if(!CH.c||!CH.c.getContext)return;CH.g=CH.c.getContext('2d');if(!CH.g)return;}
+  const bo=beamOn(t,player.s,player.x,player.y);
+  CH.acc+=Math.min(dt,0.1);
+  while(CH.acc>=0.02){CH.acc-=0.02;
+    CH.noise=CH.noise*0.55+(Math.random()-0.5)*0.9;
+    CH.buf[CH.head]=Math.sqrt(bo.on)*(0.35+0.65*bo.str)+CH.noise*0.045;CH.head=(CH.head+1)%CH.buf.length;}
+  const g=CH.g,W=600,H=92,base=H*0.72,pen=W*0.74,n=CH.buf.length,step=pen/n,pps=pen/(n*0.02);
+  g.clearRect(0,0,W,H);
+  g.strokeStyle='rgba(232,234,238,.09)';g.lineWidth=1;g.beginPath();g.moveTo(0,base+0.5);g.lineTo(W,base+0.5);g.stroke();
+  g.strokeStyle='rgba(232,234,238,.78)';g.lineWidth=1.8;g.lineJoin='round';g.beginPath();
+  for(let i=0;i<n;i++){const v=CH.buf[(CH.head+i)%n],x=i*step,y=base-v*H*0.6;if(i)g.lineTo(x,y);else g.moveTo(x,y);}
+  g.stroke();
+  g.fillStyle='rgba(232,234,238,.9)';g.beginPath();g.arc(pen,base-CH.buf[(CH.head+n-1)%n]*H*0.6,2.6,0,7);g.fill();
+  // where the next pulse will land: the beam's turn, as you are moving through it
+  if(phase==='race'){
+    const rate=2*Math.PI/(player.beatGap||PSR.P),tn=(bo.d<0?-bo.d:2*Math.PI-bo.d)/rate,x=pen+tn*pps;
+    if(x<W-2){g.strokeStyle='rgba(217,187,120,'+(0.25+0.45*bo.str).toFixed(2)+')';g.lineWidth=1.5;
+      g.beginPath();g.moveTo(x,base-10);g.lineTo(x,base+6);g.stroke();}
   }
 }
 // ---------------- speed, as it is seen ----------------

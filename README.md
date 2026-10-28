@@ -25,7 +25,12 @@ real distance. Its first world is built:
 
 | | world | place | force |
 |---|---|---|---|
-| II | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · the beam turns once every 1.3373 s, and acts on *when* |
+| II | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
+
+Metronome's beam is radio, as the real one is: it is never drawn and the sky never flashes. You hear
+each pulse in the receiver and read it on a chart recorder at the bottom of the screen — the way Jocelyn
+Bell Burnell first found it in 1967, as a bit of scruff on the paper at 81.5 MHz — with a faint mark
+ahead of the pen where the next pulse will land.
 
 In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
 honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
@@ -90,3 +95,9 @@ drawn in code at load.
 
 Deployed with GitHub Pages. Each world is served from its own folder, so the URL
 is the world's name.
+
+## the descent
+
+The page on codifiedresonance.com that leads into the worlds is served from here too: `descent/descent.css`
+and `descent/descent.js`. The embed on the site is a few lines that load them, so the descent changes
+when this repo is pushed, with nothing to paste.
