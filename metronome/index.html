@@ -945,6 +945,8 @@ const beamMain=beamCone(13000,0.2,0.045,0xbad6ff,0.5);beamG.add(beamMain);
 const beamCoreL=beamCone(12000,0.045,0.012,0xffffff,0.75);beamG.add(beamCoreL);
 const beamOther=beamCone(3800,0.2,0.2,0x7fa6ff,0.16);beamOther.rotation.x=-Math.PI/2+2.3;beamG.add(beamOther);
 let beamFlash=0,beatPulse=0;
+// gentler still for anyone who has asked their device for less motion
+const SOFT=(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)?0.5:1;
 
 // finish gate
 const gate=new THREE.Mesh(new THREE.TorusGeometry(15,0.35,10,64),matGlow(0xe8eaee,0.9));
@@ -1304,7 +1306,7 @@ function warpEntry(){
 function onReactorCut(){addScar('drive',0.12);}   // a reactor cut leaves its heat in the drive
 // the beat: what CP 1919 sounds like when its pulses are played as sound. a thump, and a breath of static.
 function pulseThump(k){
-  beatPulse=1;
+  beatPulse=1;addTrauma((0.04+0.08*clamp(k,0,1))*SOFT);   // felt, not flashed
   if(!actx||!noiseBuf||!fxBus)return;
   try{
     const now=actx.currentTime,g0=0.05+0.2*clamp(k,0,1);
@@ -1691,10 +1693,13 @@ function placeWorld(viewS){
   }
   // the beam turns on the universe's clock: the sim's in the crossing, the same clock everywhere else
   beamG.rotation.y=Math.PI-beamAngle(t);
+  {const nr=(player&&(phase==='race'||phase==='done'))?(player.beamNear||0):0;
+   const cl=(player&&(phase==='race'||phase==='done'))?(player.beamClose||1):1;
+   beamMain.material.opacity=0.34*cl*(1-0.95*nr);beamCoreL.material.opacity=0.5*cl*(1-0.98*nr);}
   const dz=viewS-PSR.s,far=Math.sqrt(dz*dz+PSR.x*PSR.x);
-  const hs=clamp(far/420,1,28)*(1+beatPulse*0.35);   // a point of light, however far; it flares on each beat that reaches you
+  const hs=clamp(far/420,1,28)*(1+beatPulse*0.12);   // a point of light, however far; it flares on each beat that reaches you
   [psrHalo,psrHalo2].forEach(function(h){const b=h.userData.base;if(b)h.scale.set(b*hs,b*hs,1);else h.scale.set(hs,hs,hs);});
-  psrCore.scale.set(1+beatPulse*0.25,1+beatPulse*0.25,1+beatPulse*0.25);
+  psrCore.scale.set(1+beatPulse*0.1,1+beatPulse*0.1,1+beatPulse*0.1);
   galaxy.rotation.z+=0.00004;
 }
 function placeRacers(viewS,dt){
@@ -1851,7 +1856,7 @@ function updateHazards(dt,viewS){
     const a=asteroids[i];
     a.x+=a.vx*dt;
     if(a.mesh.material&&a.mesh.material!==astMat){const bo=beamOn(t,a.s,a.x,a.y);   // seen in the flash of the beam, and then not
-      a.lit=Math.max((a.lit||0)-dt*2.6,bo.on*(0.35+0.65*bo.str));a.mesh.material.emissiveIntensity=0.05+a.lit*1.6;}
+      a.lit=Math.max((a.lit||0)-dt*1.4,bo.on*(0.35+0.65*bo.str));a.mesh.material.emissiveIntensity=0.05+a.lit*0.75*SOFT;}
     a.mesh.rotation.x+=a.rx*dt;a.mesh.rotation.y+=a.ry*dt;
     a.mesh.position.set(a.x,a.y,-(a.s-viewS));
     if(a.s<viewS-50){a.mesh.visible=false;astFree.push(a);asteroids.splice(i,1);continue;}
@@ -2083,10 +2088,15 @@ function updateRace(dt){
   sun.intensity=1.0*clamp(lightLevel,0.04,1.35);
   denLvl+=(((secNow.den!==undefined)?secNow.den:0.5)-denLvl)*Math.min(1,dt);
   scene.fog.density=0.0008+denLvl*0.0012;
-  beamFlash=Math.max(beamFlash-dt*3.2,hitB);beatPulse=Math.max(0,beatPulse-dt*2.8);
-  ambientL.intensity+=beamFlash*0.9;sun.intensity+=beamFlash*0.6;
-  iceMat.opacity=0.12+denLvl*0.3+beamFlash*0.35;
-  veilEl.style.background='#cfe0ff';veilEl.style.opacity=String(beamFlash*0.16);
+  // the beam is seen out in the world, never in your eyes: no flash on the screen, a slow swell of light
+  // around you (rising over a fifth of a second, settling over a second), and the beam's own light
+  // stands back as it reaches you, so the frame never floods
+  beamFlash+=(hitB-beamFlash)*Math.min(1,dt*(hitB>beamFlash?6:1.6));beatPulse=Math.max(0,beatPulse-dt*2.2);
+  p.beamNear=clamp(1-Math.abs(bo.d)/1.2,0,1)*(bo.r<2600?1:clamp((5200-bo.r)/2600,0,1));
+  p.beamClose=clamp((bo.r-300)/2600,0.28,1);   // close to the star the beam is all around you: it is drawn quieter there
+  ambientL.intensity+=beamFlash*0.2*SOFT;sun.intensity+=beamFlash*0.1*SOFT;
+  iceMat.opacity=0.12+denLvl*0.3+beamFlash*0.1*SOFT;
+  veilEl.style.opacity=0;
   // dust
   if(p.carryT===undefined)p.carryT=0;
   if(p.carryT>0)p.carryT-=dt;
