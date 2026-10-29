@@ -240,7 +240,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     <div id="heatWrap"><div id="heatFill"></div></div>
     <div id="hudCargo"></div>
   </div>
-  <div id="hintKeys" class="lbl">arrows / wasd steer · space hold · r restart · m sound · c comms</div>
+  <div id="hintKeys" class="lbl">arrows / wasd steer · space hold · r restart · m sound</div>
 </div>
 
 <div id="announce"></div>
@@ -1780,7 +1780,7 @@ $('btnSound').addEventListener('pointerdown',function(e){e.stopPropagation();});
 $('btnComms').addEventListener('pointerdown',function(e){e.stopPropagation();});
 $('btnComms').addEventListener('click',function(e){e.stopPropagation();initAudio();COMMS.toggle();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyC'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)COMMS.toggle();});
-setTimeout(function(){try{$('btnComms').textContent=COMMS.on?'comms':'comms off';}catch(e){}},0);
+setTimeout(function(){try{$('btnComms').textContent=COMMS.on?'comms':'comms off';if(!COMMS_LIVE)$('btnComms').style.display='none';}catch(e){}},0);
 $('btnSound').addEventListener('click',function(e){e.stopPropagation();initAudio();toggleSound();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyM'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)toggleSound();});
 setTimeout(applySound,0);
@@ -2555,6 +2555,7 @@ function updateRelive(dt){
 // reach you in time, so home recorded its words before you left, including the ones for if things go wrong.
 // it remembers you. switch it off with the word at the top, or C. it never touches the simulation.
 const COMMS_DATA={"station": [["HOME", "sent", "SENT {lmin} MIN AGO"]], "release": [["mr.r0", "after:well", "Home here. This left us {lmin} minutes ago, so you're already in it. The proving ground is behind you. This is the voyage now. Mars first."], ["mr.r1", "first", "Home here. This left us {lmin} minutes ago. Whatever you're doing now, we can't see it yet. Fly as if we're watching. We will be, later."], ["mr.r4", "after:metronome", "Home here. You've already heard the first pulsar, so Mars must feel like next door. It isn't. Mind the walls."], ["mr.r2", "again", "Home again, {lmin} minutes behind you as always. Same canyon. It's waited three and a half billion years. It can wait for you."], ["mr.r3", "veteran", "We've stopped trying to talk you through it. You know the canyon. We'll just listen."], ["mr.r5", "away", "Home. It's been a while. Mars has moved since you were last here. We're {lmin} minutes apart today."]], "section": {"NOCTIS LABYRINTHUS": [["mr.s1", "first", "Noctis Labyrinthus. The labyrinth of the night. There's often fog in here at dawn. It's water ice. Take the wide channels."]], "IUS CHASMA": [["mr.s2", "any", "Ius Chasma. The walls are nearly seven kilometres high, and they don't always hold. Watch for rock coming down."], ["mr.s2b", "veteran", "Ius. The narrows."]], "MELAS CHASMA": [["mr.s3", "any", "This one was meant for the narrows in Ius. You'll be through them by now. Well done."], ["mr.s3b", "again", "Melas. The widest part of the canyon. Breathe."]], "COPRATES CHASMA": [["mr.s4", "first", "Coprates. There's a storm in the forecast. The wind in a Martian storm couldn't knock over a tent. It's the dust. You won't see the rocks until they're close."], ["mr.s4b", "again", "When Mariner 9 got here in 1971, the whole planet was under a dust storm. It waited for it to clear. This canyon was underneath."]], "EOS CHAOS": [["mr.s5", "any", "Eos Chaos. The ground fell in here, probably when the water underneath it burst out. Thread the blocks."]], "CHRYSE": [["mr.s6", "any", "Chryse. The water that carved the end of this canyon ran out here, a long time ago. Viking 1 landed out there in 1976. It's still there."]]}, "hitx": [["mr.x1", "any", "If you're hearing this, you've hit something. Rock doesn't move out of the way here. Give the walls room."]], "finish": [["mr.f1", "first", "You're through. We won't see it for another {lmin} minutes. I already know you did."], ["mr.f2", "best", "{time}. Your best through the canyon. We'll cheer in {lmin} minutes."], ["mr.f3", "notbest", "Through again. {time}. The canyon took three and a half billion years. Take your time."], ["mr.f4", "clean", "Not a scratch on it. That's rare in there."]],"probe":[["sky",function(){return player&&player.s>10500&&player.s<12500;},[["mr.k1", "any", "I remember when they used to tell you not to look up. Not by saying it. It's beautiful out here, isn't it."], ["mr.k2", "again", "Look up while you can."]]],["panels",function(){return typeof cargo!=='undefined'&&cargo<55;},[["mr.p1", "any", "If the panels are dusting over, let a dust devil pass over you. It cleans them. It kept two rovers going for years."]]],["above",function(){return player&&player.y>RIM+8;},[["mr.p2", "any", "You're above the rim. It's flat up there for a very long way. The canyon is the way. Come down when you're ready."]]]]}, COMMS_COMMON={"hit": [["c.h1", "any", "Knocked, not broken. Keep going."], ["c.h2", "any", "That one will leave a mark. Hold your line."], ["c.h3", "veteran", "Shake it off. You've had worse out there."]], "retry": [["c.rt1", "any", "Back at the start. Take your time. Space is patient."], ["c.rt2", "any", "Again. Nobody's counting but you."], ["c.rt3", "any", "Reset. Breathe. Go when you're ready."], ["c.rt4", "veteran", "From the top. You know the way."]], "hit_rec": [["c.hr1", "any", "If you're hearing this, something has hit you. The hull was built for it. Breathe, and hold your line."]], "cut": [["c.c1", "any", "Reactor's cut itself. It'll come back. Coast and let it cool."]], "cut_rec": [["c.cr1", "any", "If the reactor has cut out, it protected itself. Coast. It comes back."]], "drift": [["c.d1", "first", "You've left the line. It's only you and the stars out there. Come back when you're ready."], ["c.d2", "again", "Drifting again. I don't blame you. It's beautiful out there."]], "ahead": [["c.a1", "any", "You're ahead of your own line."], ["c.a2", "again", "Ahead of your old self. Keep it."]], "behind": [["c.b1", "any", "Your old line is ahead of you. It isn't going anywhere."]]};
+/*COMMS-REST*/ const COMMS_LIVE=false;   // station control is built and resting: true wakes it, everywhere in this world
 const COMMS=(function(){
   let on=true;try{on=localStorage.getItem('moonline.comms')!=='0';}catch(e){}
   const MEMK='moonline.comms.mem';
@@ -2653,10 +2654,11 @@ const COMMS=(function(){
   function list(name){return COMMS_DATA[name]||COMMS_COMMON[name];}
   const api={
     get on(){return on;},
-    toggle:function(){on=!on;try{localStorage.setItem('moonline.comms',on?'1':'0');}catch(e){}
+    toggle:function(){if(!COMMS_LIVE)return;on=!on;try{localStorage.setItem('moonline.comms',on?'1':'0');}catch(e){}
       if(!on){try{speechSynthesis.cancel();}catch(e){}if(el)el.className='';busy=false;queue=null;}
       try{$('btnComms').textContent=on?'comms':'comms off';}catch(e){}},
     ev:function(kind,arg){
+      if(!COMMS_LIVE)return;
       if(WITNESSING||REPLAY)return;
       const rec=station()[1]!=='live';
       if(kind==='release'){
@@ -2694,6 +2696,7 @@ const COMMS=(function(){
         busy=false;lastAt=-99;setTimeout(function(){send(line,{});},2600);return;}
     },
     tick:function(p){   // dangers and milestones, each said once a crossing
+      if(!COMMS_LIVE)return;
       if(!on||WITNESSING||REPLAY||CLIP||!p||phase!=='race')return;
       if(!fired.half&&typeof FINISH!=='undefined'&&p.s>FINISH*0.5){fired.half=1;if(COMMS_DATA.half)send(choose(COMMS_DATA.half),{});}
       if(typeof ghost!=='undefined'&&ghost&&!ghost.theirs&&typeof ghostGap==='number'&&raceT>8){

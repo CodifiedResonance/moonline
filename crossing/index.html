@@ -218,7 +218,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     <div id="boostWrap"><div id="boostFill"></div></div>
     <div id="vbLabel"></div>
   </div>
-  <div id="hintKeys" class="lbl">arrows / wasd steer · space hold · r restart · m sound · c comms</div>
+  <div id="hintKeys" class="lbl">arrows / wasd steer · space hold · r restart · m sound</div>
 </div>
 
 <div id="announce"></div>
@@ -1613,7 +1613,7 @@ $('btnSound').addEventListener('pointerdown',function(e){e.stopPropagation();});
 $('btnComms').addEventListener('pointerdown',function(e){e.stopPropagation();});
 $('btnComms').addEventListener('click',function(e){e.stopPropagation();initAudio();COMMS.toggle();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyC'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)COMMS.toggle();});
-setTimeout(function(){try{$('btnComms').textContent=COMMS.on?'comms':'comms off';}catch(e){}},0);
+setTimeout(function(){try{$('btnComms').textContent=COMMS.on?'comms':'comms off';if(!COMMS_LIVE)$('btnComms').style.display='none';}catch(e){}},0);
 $('btnSound').addEventListener('click',function(e){e.stopPropagation();initAudio();toggleSound();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyM'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)toggleSound();});
 setTimeout(applySound,0);
@@ -2350,6 +2350,7 @@ function updateRelive(dt){
 // reach you in time, so home recorded its words before you left, including the ones for if things go wrong.
 // it remembers you. switch it off with the word at the top, or C. it never touches the simulation.
 const COMMS_DATA={"station": [["HOME", "live", "1.3 LIGHT-SECONDS"], ["TRANQUILITY", "live", "LUNAR ORBIT"]], "handover": "LUNAR APPROACH", "release": [["cr.r1", "first", "Home here. You're clear of the station. Everything we say takes a second and a bit to reach you, so don't wait on us."], ["cr.r2", "again", "Home here. Clear of the station. Same Moon as last time. It's a few centimetres further away every year."], ["cr.r3", "veteran", "Home. Clear and away. You know this road better than we do now."], ["cr.r4", "away", "Home here. It's been a while. The Moon kept its place for you."]], "section": {"METEOR SHOWER": [["cr.s1", "any", "Meteors crossing your path. Grains of dust, tens of kilometres a second. Small things, very fast."], ["cr.s1b", "again", "Meteor shower again. Same grains, different sky."]], "THE BELT": [["cr.s2", "any", "Rock ahead, a lot of it. Look for the gaps, not the rocks."], ["cr.s2b", "veteran", "The belt. You know what to do."]], "THE NOTHING": [["cr.s3", "any", "Nothing out there for a long while. Enjoy it. Most people never get this much quiet."], ["cr.s3b", "again", "The long quiet. We'll keep ours too."]], "LUNAR APPROACH": [["cr.s4", "any", "Tranquility here. We have you. Home's handed you over. They're still listening."], ["cr.s4b", "again", "Tranquility. We have you again. Welcome back to our side."]]}, "half": [["cr.h1", "any", "Halfway. If you can, look back. That's everyone you know, in one blue dot."], ["cr.h2", "again", "Halfway. Earth's behind you. It'll wait."]], "finish": [["cr.f1", "first", "Welcome to the Moon. You crossed. Home sends its love. It'll get here in a second."], ["cr.f2", "best", "{time}. That's your best. Home just heard."], ["cr.f3", "notbest", "{time}. Not your fastest. Doesn't matter. You crossed."], ["cr.f4", "clean", "Not a mark on it. Clean crossing."]],"probe":[]}, COMMS_COMMON={"hit": [["c.h1", "any", "Knocked, not broken. Keep going."], ["c.h2", "any", "That one will leave a mark. Hold your line."], ["c.h3", "veteran", "Shake it off. You've had worse out there."]], "retry": [["c.rt1", "any", "Back at the start. Take your time. Space is patient."], ["c.rt2", "any", "Again. Nobody's counting but you."], ["c.rt3", "any", "Reset. Breathe. Go when you're ready."], ["c.rt4", "veteran", "From the top. You know the way."]], "hit_rec": [["c.hr1", "any", "If you're hearing this, something has hit you. The hull was built for it. Breathe, and hold your line."]], "cut": [["c.c1", "any", "Reactor's cut itself. It'll come back. Coast and let it cool."]], "cut_rec": [["c.cr1", "any", "If the reactor has cut out, it protected itself. Coast. It comes back."]], "drift": [["c.d1", "first", "You've left the line. It's only you and the stars out there. Come back when you're ready."], ["c.d2", "again", "Drifting again. I don't blame you. It's beautiful out there."]], "ahead": [["c.a1", "any", "You're ahead of your own line."], ["c.a2", "again", "Ahead of your old self. Keep it."]], "behind": [["c.b1", "any", "Your old line is ahead of you. It isn't going anywhere."]]};
+/*COMMS-REST*/ const COMMS_LIVE=false;   // station control is built and resting: true wakes it, everywhere in this world
 const COMMS=(function(){
   let on=true;try{on=localStorage.getItem('moonline.comms')!=='0';}catch(e){}
   const MEMK='moonline.comms.mem';
@@ -2448,10 +2449,11 @@ const COMMS=(function(){
   function list(name){return COMMS_DATA[name]||COMMS_COMMON[name];}
   const api={
     get on(){return on;},
-    toggle:function(){on=!on;try{localStorage.setItem('moonline.comms',on?'1':'0');}catch(e){}
+    toggle:function(){if(!COMMS_LIVE)return;on=!on;try{localStorage.setItem('moonline.comms',on?'1':'0');}catch(e){}
       if(!on){try{speechSynthesis.cancel();}catch(e){}if(el)el.className='';busy=false;queue=null;}
       try{$('btnComms').textContent=on?'comms':'comms off';}catch(e){}},
     ev:function(kind,arg){
+      if(!COMMS_LIVE)return;
       if(WITNESSING||REPLAY)return;
       const rec=station()[1]!=='live';
       if(kind==='release'){
@@ -2489,6 +2491,7 @@ const COMMS=(function(){
         busy=false;lastAt=-99;setTimeout(function(){send(line,{});},2600);return;}
     },
     tick:function(p){   // dangers and milestones, each said once a crossing
+      if(!COMMS_LIVE)return;
       if(!on||WITNESSING||REPLAY||CLIP||!p||phase!=='race')return;
       if(!fired.half&&typeof FINISH!=='undefined'&&p.s>FINISH*0.5){fired.half=1;if(COMMS_DATA.half)send(choose(COMMS_DATA.half),{});}
       if(typeof ghost!=='undefined'&&ghost&&!ghost.theirs&&typeof ghostGap==='number'&&raceT>8){

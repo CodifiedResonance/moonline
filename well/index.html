@@ -237,7 +237,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     <div id="heatWrap"><div id="heatFill"></div></div>
   </div>
   <div id="depthGauge"><div id="dgLbl">DEPTH</div><div id="dgGap"></div><div id="dgEdge"></div><div id="dgYou"></div></div>
-  <div id="hintKeys" class="lbl">↑ climb against the pull · ↓ dive · ← → steer · space hold · r restart · c comms</div>
+  <div id="hintKeys" class="lbl">↑ climb against the pull · ↓ dive · ← → steer · space hold · r restart</div>
 </div>
 
 <div id="announce"></div>
@@ -1565,7 +1565,7 @@ $('btnSound').addEventListener('pointerdown',function(e){e.stopPropagation();});
 $('btnComms').addEventListener('pointerdown',function(e){e.stopPropagation();});
 $('btnComms').addEventListener('click',function(e){e.stopPropagation();initAudio();COMMS.toggle();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyC'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)COMMS.toggle();});
-setTimeout(function(){try{$('btnComms').textContent=COMMS.on?'comms':'comms off';}catch(e){}},0);
+setTimeout(function(){try{$('btnComms').textContent=COMMS.on?'comms':'comms off';if(!COMMS_LIVE)$('btnComms').style.display='none';}catch(e){}},0);
 $('btnSound').addEventListener('click',function(e){e.stopPropagation();initAudio();toggleSound();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyM'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)toggleSound();});
 setTimeout(applySound,0);
@@ -2349,6 +2349,7 @@ function updateRelive(dt){
 // reach you in time, so home recorded its words before you left, including the ones for if things go wrong.
 // it remembers you. switch it off with the word at the top, or C. it never touches the simulation.
 const COMMS_DATA={"station": [["HOME", "recorded", "RECORDED BEFORE DEPARTURE"]], "release": [["wl.r1", "first", "This was recorded before you left, and I don't know when you're hearing it. Time is strange where you are. Mind your clock."], ["wl.r2", "again", "You went back. Of course you did. Mind the edge."]], "release_lost": [["wl.rl1", "any", "If you're hearing this again, we lost you once already. The signal just stopped. Mind the edge this time."]], "section": {"THE APPROACH": [["wl.s1", "any", "Every second you spend deep down there is longer up here. Remember that."]], "THE DISK": [["wl.s2", "any", "The disk. The side turning toward you is brighter. It's coming at you."]], "THE SLING": [["wl.s3", "any", "The sling. Fall for speed, but not too far."]], "THE CLIMB": [["wl.s4", "any", "Climb now. It'll feel slow. For you, it is."]], "THE RETURN": [["wl.s5", "any", "Nearly out. Your clock and ours have been arguing the whole way."]]}, "finish": [["wl.f1", "first", "You came back. However long it's been for you, it's been longer here."], ["wl.f2", "best", "{time} on your clock. Faster than ever. Ours ran slower than you'd think."], ["wl.f3", "notbest", "Back again. Every time you go in there, you come out a little younger than us."]],"probe":[["deep",function(){return player&&typeof horizonAt==='function'&&(player.gy||0)>horizonAt(player.s)-2.5;},[["wl.p1", "any", "If you're hearing this, you're close to the edge. Come up. Please come up."]]]]}, COMMS_COMMON={"hit": [["c.h1", "any", "Knocked, not broken. Keep going."], ["c.h2", "any", "That one will leave a mark. Hold your line."], ["c.h3", "veteran", "Shake it off. You've had worse out there."]], "retry": [["c.rt1", "any", "Back at the start. Take your time. Space is patient."], ["c.rt2", "any", "Again. Nobody's counting but you."], ["c.rt3", "any", "Reset. Breathe. Go when you're ready."], ["c.rt4", "veteran", "From the top. You know the way."]], "hit_rec": [["c.hr1", "any", "If you're hearing this, something has hit you. The hull was built for it. Breathe, and hold your line."]], "cut": [["c.c1", "any", "Reactor's cut itself. It'll come back. Coast and let it cool."]], "cut_rec": [["c.cr1", "any", "If the reactor has cut out, it protected itself. Coast. It comes back."]], "drift": [["c.d1", "first", "You've left the line. It's only you and the stars out there. Come back when you're ready."], ["c.d2", "again", "Drifting again. I don't blame you. It's beautiful out there."]], "ahead": [["c.a1", "any", "You're ahead of your own line."], ["c.a2", "again", "Ahead of your old self. Keep it."]], "behind": [["c.b1", "any", "Your old line is ahead of you. It isn't going anywhere."]]};
+/*COMMS-REST*/ const COMMS_LIVE=false;   // station control is built and resting: true wakes it, everywhere in this world
 const COMMS=(function(){
   let on=true;try{on=localStorage.getItem('moonline.comms')!=='0';}catch(e){}
   const MEMK='moonline.comms.mem';
@@ -2447,10 +2448,11 @@ const COMMS=(function(){
   function list(name){return COMMS_DATA[name]||COMMS_COMMON[name];}
   const api={
     get on(){return on;},
-    toggle:function(){on=!on;try{localStorage.setItem('moonline.comms',on?'1':'0');}catch(e){}
+    toggle:function(){if(!COMMS_LIVE)return;on=!on;try{localStorage.setItem('moonline.comms',on?'1':'0');}catch(e){}
       if(!on){try{speechSynthesis.cancel();}catch(e){}if(el)el.className='';busy=false;queue=null;}
       try{$('btnComms').textContent=on?'comms':'comms off';}catch(e){}},
     ev:function(kind,arg){
+      if(!COMMS_LIVE)return;
       if(WITNESSING||REPLAY)return;
       const rec=station()[1]!=='live';
       if(kind==='release'){
@@ -2488,6 +2490,7 @@ const COMMS=(function(){
         busy=false;lastAt=-99;setTimeout(function(){send(line,{});},2600);return;}
     },
     tick:function(p){   // dangers and milestones, each said once a crossing
+      if(!COMMS_LIVE)return;
       if(!on||WITNESSING||REPLAY||CLIP||!p||phase!=='race')return;
       if(!fired.half&&typeof FINISH!=='undefined'&&p.s>FINISH*0.5){fired.half=1;if(COMMS_DATA.half)send(choose(COMMS_DATA.half),{});}
       if(typeof ghost!=='undefined'&&ghost&&!ghost.theirs&&typeof ghostGap==='number'&&raceT>8){

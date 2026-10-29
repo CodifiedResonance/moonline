@@ -64,7 +64,7 @@ A specific universe can be visited directly with `?seed=` — for example
 
 ## playing
 
-Arrows or WASD steer; space holds (each machine's hold is its own); R restarts; M mutes; C switches the radio off and on.
+Arrows or WASD steer; space holds (each machine's hold is its own); R restarts; M mutes.
 A controller works too: left stick steers, A or a trigger holds, Start restarts. On a phone,
 drag anywhere to steer and hold the button bottom right.
 
@@ -109,6 +109,9 @@ machine still comes through on earphones and small speakers; VECTOR's and TRAWLE
 combustion flutter.
 
 ## station control
+
+*Built, and resting.* Station control is switched off for now (`COMMS_LIVE` in each world): the crossings
+are not yet long enough to call for it. Everything below is in place for when they are.
 
 A human voice on the radio, and the words follow the light. From the Moon home answers live, a few seconds
 late, because your news takes 1.3 seconds to reach them and their answer 1.3 seconds to come back; at lunar
