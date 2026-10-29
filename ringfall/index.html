@@ -133,6 +133,15 @@ body.clipping canvas{position:fixed;left:50%;top:50%;transform:translate(-50%,-5
   font-family:inherit;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:rgba(232,234,238,.3);
   -webkit-tap-highlight-color:transparent;transition:color .35s ease}
 #btnRestart{right:150px;display:none}#btnSound{right:72px}
+#btnComms{position:fixed;top:12px;right:232px;z-index:20;background:none;border:none;cursor:pointer;padding:10px 8px;font-family:inherit;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:rgba(232,234,238,.3);transition:color .35s ease}
+#btnComms:hover,#btnComms:focus-visible{color:rgba(232,234,238,.75);outline:none}
+#comms{position:fixed;left:18px;bottom:118px;max-width:min(38ch,72vw);z-index:7;pointer-events:none;opacity:0;transition:opacity .5s ease}
+#comms.on{opacity:1}
+#comms .cmH{font-size:8.5px;letter-spacing:.28em;color:rgba(255,217,168,.62);margin-bottom:6px;text-transform:uppercase}
+#comms .cmT{font-size:11.5px;line-height:1.7;letter-spacing:.03em;color:rgba(232,234,238,.86);text-shadow:0 0 14px rgba(3,4,8,.95)}
+#comms.lost .cmT{color:rgba(232,234,238,.4);letter-spacing:.2em}
+body.clipping #comms,body.clipping #btnComms{display:none!important}
+@media (max-width:600px){#btnComms{right:214px}#comms{bottom:84px;left:16px;max-width:calc(100vw - 150px)}#comms .cmT{font-size:11px;line-height:1.6}}
 @media (max-width:600px){#hudTop{top:48px;gap:16px;flex-wrap:wrap;right:18px}#btnRestart{right:128px}#btnSound{right:62px}}
 #btnRestart:hover,#btnSound:hover,#btnRestart:focus-visible,#btnSound:focus-visible{color:rgba(232,234,238,.75);outline:none}
 #btnRestart.arm{color:rgba(232,234,238,.9)}
@@ -210,7 +219,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     <div id="boostWrap"><div id="boostFill"></div></div>
     <div id="vbLabel"></div>
   </div>
-  <div id="hintKeys" class="lbl">arrows / wasd steer · space hold · r restart · m sound</div>
+  <div id="hintKeys" class="lbl">arrows / wasd steer · space hold · r restart · m sound · c comms</div>
 </div>
 
 <div id="announce"></div>
@@ -264,6 +273,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 
 <button id="btnRestart" type="button" aria-label="Restart the crossing">restart</button>
 <button id="btnSound" type="button" aria-label="Sound on or off">sound</button>
+<button id="btnComms" type="button" aria-label="Radio comms on or off">comms</button>
 <button id="btnLeave" type="button" aria-label="Leave the crossing">leave</button>
 <div id="stick"><i></i></div>
 <div id="touchHint"></div>
@@ -1082,6 +1092,7 @@ for(let i=0;i<6;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.7,1.7),mat
 // ------------------------------------------------------------ audio (Web Audio, gesture-gated)
 let actx=null,engOsc=null,engGain=null,engFilt=null,windGain=null,driftGain=null;
 let engSineG=null,engRumbleF=null,engRumbleG=null,engWhine=null,engWhineG=null,bodyNext={tick:0,creak:0};
+let engHullF=null,engHullG=null,engFlut=null,engFlutG=null,engFlutHG=null;
 let tearGain=null,tearFilt=null,subGain=null,subOsc=null,noiseBuf=null,fxBus=null;
 // a rock going by: a breath of air that isn't there, falling in pitch as it passes
 let whooshBuf=null,whooshT=-9;
@@ -1127,6 +1138,15 @@ function initAudio(){
      rs.connect(engRumbleF);engRumbleF.connect(engRumbleG);engRumbleG.connect(engGain);rs.start();}
     engWhine=actx.createOscillator();engWhine.type='sine';engWhine.frequency.value=1870;
     engWhineG=actx.createGain();engWhineG.gain.value=0;engWhine.connect(engWhineG);engWhineG.connect(actx.destination);engWhine.start();
+    /*SOUND3*/ // the hull band: the frame resonating where the ear lives, and a flutter that makes combustion breathe
+    {const hl=Math.floor(actx.sampleRate*1.7),hb=actx.createBuffer(1,hl,actx.sampleRate),hd=hb.getChannelData(0);
+     let p0=0,p1=0,p2=0;for(let i=0;i<hl;i++){const w=Math.random()*2-1;p0=0.997*p0+w*0.029;p1=0.985*p1+w*0.032;p2=0.95*p2+w*0.048;hd[i]=(p0+p1+p2+w*0.02)*2.2;}   // pink
+     const hs=actx.createBufferSource();hs.buffer=hb;hs.loop=true;
+     engHullF=actx.createBiquadFilter();engHullF.type='bandpass';engHullF.frequency.value=220;engHullF.Q.value=1.1;
+     const hs2=actx.createBiquadFilter();hs2.type='lowpass';hs2.frequency.value=900;hs2.Q.value=0.5;
+     engHullG=actx.createGain();engHullG.gain.value=0;hs.connect(engHullF);engHullF.connect(hs2);hs2.connect(engHullG);engHullG.connect(actx.destination);hs.start();}
+    engFlut=actx.createOscillator();engFlut.type='sine';engFlut.frequency.value=17;engFlutG=actx.createGain();engFlutG.gain.value=0;
+    engFlut.connect(engFlutG);engFlutG.connect(engRumbleG.gain);engFlutHG=actx.createGain();engFlutHG.gain.value=0;engFlut.connect(engFlutHG);engFlutHG.connect(engHullG.gain);engFlut.start();
     const len=actx.sampleRate*1.5;
     const buf=actx.createBuffer(1,len,actx.sampleRate);
     const d=buf.getChannelData(0);
@@ -1163,10 +1183,11 @@ function initAudio(){
   }catch(e){actx=null;}
 }
 // each machine as its own frame carries it: f0 felt fundamental, rf rumble cutoff, g level, sm sine mix, wh pump
-const VOICE={ship:{f0:38,fr:9,rf:105,rr:70,b:0.05,g:0.11,gb:0.06,sm:0.7,wh:0.0035},
-  pendulum:{f0:31,fr:3,rf:70,rr:20,b:0.018,g:0.03,gb:0.015,sm:0.5,wh:0},
-  sail:{f0:30,fr:0,rf:60,rr:0,b:0,g:0,gb:0,sm:0,wh:0},
-  trawler:{f0:57,fr:6,rf:240,rr:120,b:0.03,g:0.05,gb:0.03,sm:0.55,wh:0}};
+// h hull band level, hf/hr its centre and rise, fl/fd the combustion flutter (rate, depth)
+const VOICE={ship:{f0:38,fr:9,rf:105,rr:70,b:0.07,g:0.16,gb:0.07,sm:0.7,wh:0.0045,h:0.065,hf:190,hr:150,fl:17,fr2:9,fd:0.32},
+  pendulum:{f0:31,fr:3,rf:70,rr:20,b:0.02,g:0.035,gb:0.015,sm:0.5,wh:0,h:0.014,hf:240,hr:40,fl:0,fr2:0,fd:0},
+  sail:{f0:30,fr:0,rf:60,rr:0,b:0,g:0,gb:0,sm:0,wh:0,h:0,hf:300,hr:0,fl:0,fr2:0,fd:0},
+  trawler:{f0:57,fr:6,rf:240,rr:120,b:0.035,g:0.06,gb:0.03,sm:0.55,wh:0,h:0.032,hf:170,hr:90,fl:2.6,fr2:1.2,fd:0.45}};
 function setEngine(n,boost,quiet){
   if(!actx||!engRumbleF)return;
   const q=quiet?0.55:1;
@@ -1178,6 +1199,8 @@ function setEngine(n,boost,quiet){
   engSineG.gain.value=V.sm;
   engGain.gain.value=(V.b+n*V.g+(boost?V.gb:0))*q*dk;
   engWhineG.gain.value=V.wh*n*(boost?1:0.35)*q*dk;
+  if(engHullG){const hg=V.h*(0.2+n)*(boost?1.4:1)*q*dk;engHullG.gain.value=hg;engHullF.frequency.value=V.hf+n*V.hr;
+    engFlut.frequency.value=V.fl+n*V.fr2;engFlutG.gain.value=V.fl?V.fd*(0.4+n*0.6):0;engFlutHG.gain.value=V.fl?hg*V.fd*1.4:0;}   // the flutter swings the rumble, and the hull with it
   windGain.gain.value=n*0.13*q*dk;       // the velocity: the wind through the stars stays exactly as it was
   bodyDetail(k,n,boost,q*dk);
 }
@@ -1279,6 +1302,7 @@ function crash(sz,side){
 }
 // the reactor shutting itself off: a choke, a relay, a fall
 function reactorCut(){
+  COMMS.ev('cut');
   addTrauma(0.42);
   if(!actx||!noiseBuf||!fxBus)return;
   try{
@@ -1512,6 +1536,10 @@ $('btnClip').addEventListener('click',function(e){
   }catch(err){this.textContent='could not prepare the clip';}
 });
 $('btnSound').addEventListener('pointerdown',function(e){e.stopPropagation();});
+$('btnComms').addEventListener('pointerdown',function(e){e.stopPropagation();});
+$('btnComms').addEventListener('click',function(e){e.stopPropagation();initAudio();COMMS.toggle();});
+window.addEventListener('keydown',function(e){if(e.code==='KeyC'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)COMMS.toggle();});
+setTimeout(function(){try{$('btnComms').textContent=COMMS.on?'comms':'comms off';}catch(e){}},0);
 $('btnSound').addEventListener('click',function(e){e.stopPropagation();initAudio();toggleSound();});
 window.addEventListener('keydown',function(e){if(e.code==='KeyM'&&!e.repeat&&!e.metaKey&&!e.ctrlKey)toggleSound();});
 setTimeout(applySound,0);
@@ -1680,7 +1708,7 @@ function updateCount(dt){
     cdStep=step;
     cdEl.textContent='';   // released, not started: the clamps let go one by one, and then you are free
     if(step<3)clampRelease(step);
-    else{freeBreath();phase='race';raceT=0;t=0;simTick=0;}   // the universe's clock starts with the crossing, for everyone
+    else{freeBreath();phase='race';raceT=0;t=0;simTick=0;COMMS.ev('release');}   // the universe's clock starts with the crossing, for everyone
   }
   camera.position.set(player.x*0.55,4.6,16);
   camera.lookAt(player.x*0.8,1,-60);
@@ -1789,6 +1817,7 @@ function collide(o){
   else if(!o.whooshed&&d2<rr*rr*14){o.whooshed=true;whoosh(dx,1-Math.sqrt(d2/(rr*rr*14)),player.speed);}   // heard as it goes by
 }
 function hitPlayer(o){
+  if(phase==='race')COMMS.ev('hit');
   camBackV-=12;   // struck: the eye is thrown forward
   if(player.vx===undefined){player.vx=0;player.vy=0;}
   if(o){                                            // struck: the rock shoves, and you keep the shove
@@ -2012,7 +2041,7 @@ function updateRace(dt){
   // THE DRIFT — deep in the open, not reaching for anything, the race lets go of you
   const deepOpen=rOff>105;                       // the open is a wide place. the drift is past the far side of it.
   if(deepOpen&&!boostHeld())driftT+=dt; else driftT=0;
-  if(driftT>5)driftOn=true;
+  if(driftT>5){if(!driftOn)COMMS.ev('drift');driftOn=true;}
   if(driftOn&&rOff<45)driftOn=false;             // fly back into the course's reach and it simply has you again
   driftK+=((driftOn?1:0)-driftK)*Math.min(1,dt*0.45);
   hudEl.style.opacity=String(1-driftK*0.92);
@@ -2028,7 +2057,7 @@ function updateRace(dt){
   }
   if(openShown){if(rOff<20)openShown=false;}else{if(rOff>30)openShown=true;}
   const dispName=(driftOn?'THE DRIFT':(openShown?'THE OPEN':sec.name));
-  if(dispName!==curSecName){curSecName=dispName;annEl.textContent=dispName;annEl.classList.add('show');annT=0;}
+  if(dispName!==curSecName){curSecName=dispName;COMMS.ev('section',dispName);annEl.textContent=dispName;annEl.classList.add('show');annT=0;}
   annT+=dt;
   if(annT>2.6)annEl.classList.remove('show');
   hudEl.classList.toggle('quiet',sec.name==='THE SHADOW');
@@ -2055,12 +2084,13 @@ function updateRace(dt){
     if(ghostPtr<n-1){const gT=ghostPtr/(ghost.hz||GHOST_HZ);ghostGap=raceT-gT;
       $('hudGhost').textContent=(ghost.theirs?'their line ':'your line ')+(ghostGap>=0?'+':'\u2212')+Math.abs(ghostGap).toFixed(1);}
     else $('hudGhost').textContent='';}
+  COMMS.tick(p);
   // record, for the re-living
   recBuf.push(racers.reduce(function(acc,r){acc.push(r.s,r.x,r.y);return acc;},[raceT]));
   // finish
   if(p.s>=FINISH){
     p.finished=true;p.fTime=raceT;finishOrder.push(p);
-    finishTone();phase='done';doneT=0;resShown=false;
+    finishTone();if(!(typeof lost!=='undefined'&&lost))COMMS.ev('finish');phase='done';doneT=0;resShown=false;
     flashEl.style.opacity=0;
   }
 }
@@ -2248,6 +2278,156 @@ function updateRelive(dt){
   }
 }
 
+
+// ------------------------------------------------------------ station control
+/*COMMS*/
+// a human voice on the radio. from the Moon home answers live, a few seconds late; further out nothing can
+// reach you in time, so home recorded its words before you left, including the ones for if things go wrong.
+// it remembers you. switch it off with the word at the top, or C. it never touches the simulation.
+const COMMS_DATA={"station": [["HOME", "sent", "SENT 80 MIN AGO"], ["HOME", "recorded", "RECORDED BEFORE DEPARTURE"]], "release": [["rf.r1", "first", "This is home. By the time you hear this it's an hour and a quarter old. We watched you launch. We won't know how it went for a while yet."], ["rf.r2", "again", "Home again, an hour and a quarter late as always. Saturn's rings, once more. Go gently."], ["rf.r3", "away", "Home. It's been a while since you were out here. The rings haven't missed you, but we did."]], "section": {"THE KEELER GAP": [["rf.s2", "any", "The Keeler gap. A small moon called Daphnis lives in here and makes waves in the edges."]], "THE CASSINI DIVISION": [["rf.s3", "any", "The Cassini Division. Not empty, just thinner. Thinner is not nothing."]], "THE SHADOW": [["rf.s4", "any", "If you're hearing this, you're in Saturn's shadow. It'll be cold and dark for a while. It ends."]], "THE SPOKES": [["rf.s5", "any", "Spokes. Nobody is entirely sure what they are. Dust, lifted off the rings by charge. Look while you can."]], "RINGFALL": [["rf.s6", "any", "The rings are raining into Saturn, tonnes a second. One day they'll be gone. You saw them."]]}, "half": [["rf.h1", "any", "Halfway through. Saturn's been doing this for longer than we've had words."]], "finish": [["rf.f1", "first", "If you're hearing this, you made it through. We'll find out in an hour and a quarter. We'll be glad."], ["rf.f2", "best", "{time}. Your best through the rings. Somebody here will cheer in an hour and a quarter."], ["rf.f3", "notbest", "Through again. {time}. The rings don't care about the clock. Neither should you."]],"probe":[]}, COMMS_COMMON={"hit": [["c.h1", "any", "Knocked, not broken. Keep going."], ["c.h2", "any", "That one will leave a mark. Hold your line."], ["c.h3", "veteran", "Shake it off. You've had worse out there."]], "retry": [["c.rt1", "any", "Back at the start. Take your time. Space is patient."], ["c.rt2", "any", "Again. Nobody's counting but you."], ["c.rt3", "any", "Reset. Breathe. Go when you're ready."], ["c.rt4", "veteran", "From the top. You know the way."]], "hit_rec": [["c.hr1", "any", "If you're hearing this, something has hit you. The hull was built for it. Breathe, and hold your line."]], "cut": [["c.c1", "any", "Reactor's cut itself. It'll come back. Coast and let it cool."]], "cut_rec": [["c.cr1", "any", "If the reactor has cut out, it protected itself. Coast. It comes back."]], "drift": [["c.d1", "first", "You've left the line. It's only you and the stars out there. Come back when you're ready."], ["c.d2", "again", "Drifting again. I don't blame you. It's beautiful out there."]], "ahead": [["c.a1", "any", "You're ahead of your own line."], ["c.a2", "again", "Ahead of your old self. Keep it."]], "behind": [["c.b1", "any", "Your old line is ahead of you. It isn't going anywhere."]]};
+const COMMS=(function(){
+  let on=true;try{on=localStorage.getItem('moonline.comms')!=='0';}catch(e){}
+  const MEMK='moonline.comms.mem';
+  let mem={heard:{},runs:{},done:{},best:{},last:{},lost:{},total:0};
+  try{const m=JSON.parse(localStorage.getItem(MEMK)||'null');if(m&&m.heard)mem=Object.assign(mem,m);}catch(e){}
+  function saveMem(){try{localStorage.setItem(MEMK,JSON.stringify(mem));}catch(e){}}
+  const W=TRACK_KEY;let st=0,busy=false,lastAt=-99,queue=null,fired={},hits=0,sess=0,pend=null,voice=null,el=null,hd=null,tx=null,hideT=null;
+  function pickVoice(){
+    try{if(!window.speechSynthesis)return null;const vs=speechSynthesis.getVoices()||[];if(!vs.length)return null;
+      let want=null;try{want=localStorage.getItem('moonline.comms.voice');}catch(e){}
+      if(want){const v=vs.filter(function(x){return x.name===want;})[0];if(v)return v;}
+      const score=function(v){let s=0;const n=v.name||'';
+        if(/^en[-_]GB/i.test(v.lang))s+=4;else if(/^en/i.test(v.lang))s+=2;else return -1;
+        if(/natural|neural|online|enhanced|premium/i.test(n))s+=5;
+        if(/google uk english|serena|kate|martha|stephanie|sonia|libby|maisie|daniel|arthur/i.test(n))s+=3;
+        if(/compact|espeak|eloquence/i.test(n))s-=4;return s;};
+      const best=vs.slice().sort(function(a,b){return score(b)-score(a);})[0];
+      if(best&&score(best)>=0){try{localStorage.setItem('moonline.comms.voice',best.name);}catch(e){}return best;}
+    }catch(e){}return null;}
+  try{if(window.speechSynthesis)speechSynthesis.onvoiceschanged=function(){if(!voice)voice=pickVoice();};}catch(e){}
+  function ui(){
+    if(el)return;
+    try{el=document.createElement('div');el.id='comms';
+      el.innerHTML='<div class="cmH"></div><div class="cmT"></div>';document.body.appendChild(el);
+      hd=el.firstChild;tx=el.lastChild;if(!hd||!tx||hd===tx)el=null;}catch(e){el=null;}
+  }
+  function station(){const s=COMMS_DATA.station;return s[Math.min(st,s.length-1)];}
+  // squelch: the radio opening and closing. synthesised, so it travels with the rest of the sound.
+  function squelch(open){
+    if(typeof actx==='undefined'||!actx||!noiseBuf||!fxBus||MUTED)return;
+    try{nz(actx.currentTime,open?0.11:0.16,'bandpass',open?2400:1700,open?1500:900,1.4,open?0.05:0.035,-0.15,0.004);
+      blip(open?1320:880,0.03,0.012);}catch(e){}
+  }
+  function fill(t){
+    const b=mem.best[W];
+    return t.replace('{time}',(player&&player.fTime)?fmtTime(player.fTime):'').replace('{best}',b?fmtTime(b):'')
+      .replace('{runs}',String(mem.runs[W]||0)).replace('{machine}',player?player.def.name:'').replace('{hits}',String(hits));
+  }
+  function ok(when,ctx){
+    const runs=mem.runs[W]||0,done=mem.done[W]||0,away=(Date.now()-(mem.last[W]||Date.now()))>7*86400000;
+    if(when==='any')return true;
+    if(when==='first')return done===0;
+    if(when==='again')return done>=1;
+    if(when==='veteran')return done>=3;
+    if(when==='away')return away&&done>=1;
+    if(when==='best')return !!(ctx&&ctx.best)&&done>=1;
+    if(when==='notbest')return !!(ctx&&!ctx.best)&&done>=1;
+    if(when==='clean')return !!(ctx&&ctx.clean)&&done>=1;
+    if(when==='marked')return hits>0;
+    return false;
+  }
+  // choose: the most particular line that fits and hasn't been heard, else the least heard
+  function choose(list,ctx){
+    if(!list||!list.length)return null;
+    const rank={away:6,best:5,clean:4,first:4,veteran:3,notbest:2,again:2,marked:2,any:1};
+    const fit=list.filter(function(l){return ok(l[1],ctx);});if(!fit.length)return null;
+    fit.sort(function(a,b){return ((mem.heard[a[0]]||0)-(mem.heard[b[0]]||0))||((rank[b[1]]||0)-(rank[a[1]]||0));});
+    return fit[0];
+  }
+  function send(line,opt){
+    opt=opt||{};
+    if(!on||!line||WITNESSING||REPLAY||CLIP)return;
+    const now=performance.now()/1000;
+    if(busy||(!opt.q&&now-lastAt<(opt.urgent?3:8))){if(!queue||(opt.urgent&&!queue[1].urgent))queue=[line,opt,now];return;}
+    const s=station(),live=s[1]==='live';
+    if(opt.react&&!live)opt.tag='RECORDED BEFORE DEPARTURE';
+    const delay=(live&&opt.react)?3.6:0.15;   // live from the Moon: your news takes 1.3 s to arrive, the answer 1.3 s back
+    busy=true;lastAt=now+delay;mem.heard[line[0]]=(mem.heard[line[0]]||0)+1;saveMem();
+    setTimeout(function(){
+      ui();const text=fill(line[2]);
+      squelch(true);
+      if(el){hd.textContent=s[0]+' \u00b7 '+(opt.tag||s[2]);tx.textContent=text;el.className='on';clearTimeout(hideT);}
+      let spoke=false;const readBy=performance.now()+1400+text.length*48;   // the words stay long enough to read
+      const finish=function(){if(spoke==='done')return;const wait=readBy-performance.now();if(wait>60){setTimeout(finish,wait);return;}spoke='done';squelch(false);busy=false;lastAt=performance.now()/1000;
+        hideT=setTimeout(function(){if(el)el.className='';},2200);
+        if(queue){const q=queue;queue=null;setTimeout(function(){
+          if(performance.now()/1000-q[2]<25)send(q[0],Object.assign({},q[1],{q:true}));},q[1].urgent?900:4500);}};
+      try{
+        if(!MUTED&&window.speechSynthesis&&window.SpeechSynthesisUtterance){
+          if(!voice)voice=pickVoice();
+          const u=new SpeechSynthesisUtterance(text);if(voice){u.voice=voice;u.lang=voice.lang;}else u.lang='en-GB';
+          u.rate=0.93;u.pitch=0.92;u.volume=0.9;u.onend=finish;u.onerror=finish;
+          setTimeout(function(){try{speechSynthesis.speak(u);spoke=true;}catch(e){finish();}},180);
+          setTimeout(finish,1500+text.length*95);   // never wait forever on a voice that doesn't answer
+        }else setTimeout(finish,1200+text.length*55);
+      }catch(e){setTimeout(finish,1200);}
+    },delay*1000);
+  }
+  function list(name){return COMMS_DATA[name]||COMMS_COMMON[name];}
+  const api={
+    get on(){return on;},
+    toggle:function(){on=!on;try{localStorage.setItem('moonline.comms',on?'1':'0');}catch(e){}
+      if(!on){try{speechSynthesis.cancel();}catch(e){}if(el)el.className='';busy=false;queue=null;}
+      try{$('btnComms').textContent=on?'comms':'comms off';}catch(e){}},
+    ev:function(kind,arg){
+      if(WITNESSING||REPLAY)return;
+      const rec=station()[1]!=='live';
+      if(kind==='release'){
+        try{speechSynthesis.cancel();}catch(e){}
+        st=0;fired={};hits=0;busy=false;queue=null;lastAt=-99;sess++;mem.runs[W]=(mem.runs[W]||0)+1;saveMem();
+        if(!voice)voice=pickVoice();
+        // a restart: sometimes a word, mostly quiet. a first release of the session: home speaks
+        const L=(sess>1)?(Math.random()<0.5?COMMS_COMMON.retry:null):((mem.lost[W]&&COMMS_DATA.release_lost)?COMMS_DATA.release_lost:list('release'));
+        mem.lost[W]=0;
+        if(L)setTimeout(function(){send(choose(L),{});},1400);
+        if(pend){const a=pend;pend=null;setTimeout(function(){api.ev('section',a);},1700);}
+        return;}
+      if(kind==='section'){
+        if(phase!=='race'){pend=arg;return;}   // named before you are free: said once you are
+        if(raceT<2.5){setTimeout(function(){api.ev('section',arg);},3200);return;}   // home speaks first
+        if(COMMS_DATA.handover&&arg===COMMS_DATA.handover)st=1;
+        const L=(COMMS_DATA.section||{})[arg];if(!L)return;
+        if((mem.done[W]||0)>=3&&Math.random()<0.4)return;   // familiar ground: fewer words
+        send(choose(L),{});return;}
+      if(kind==='hit'){hits++;if(fired.hit&&Math.random()<0.7)return;fired.hit=1;
+        const L=(COMMS_DATA.hitx&&Math.random()<0.6)?COMMS_DATA.hitx:(rec&&!fired.hitrec?(fired.hitrec=1,COMMS_COMMON.hit_rec):COMMS_COMMON.hit);
+        send(choose(L),{react:true,urgent:true});return;}
+      if(kind==='cut'){if(fired.cut)return;fired.cut=1;send(choose(rec?COMMS_COMMON.cut_rec:COMMS_COMMON.cut),{react:true,urgent:true});return;}
+      if(kind==='drift'){if(fired.drift)return;fired.drift=1;send(choose(COMMS_COMMON.drift),{react:true});return;}
+      if(kind==='lost'){   // the well keeps its mysteries: the carrier, and then nothing
+        try{speechSynthesis.cancel();}catch(e){}busy=true;ui();mem.lost[W]=1;mem.last[W]=Date.now();saveMem();
+        if(el){hd.textContent=station()[0];tx.textContent='\u2014 signal lost \u2014';el.className='on lost';}
+        squelch(true);setTimeout(function(){if(el)el.className='';},2600);return;}
+      if(kind==='finish'){
+        const T=player?player.fTime:0,was=mem.best[W],best=!!(T&&(!was||T<was)),clean=hits===0;
+        const ctx={best:best,clean:clean&&(mem.done[W]||0)>=1};
+        const line=choose(COMMS_DATA.finish||[],ctx);
+        try{speechSynthesis.cancel();}catch(e){}queue=null;
+        mem.done[W]=(mem.done[W]||0)+1;mem.total=(mem.total||0)+1;mem.last[W]=Date.now();if(best)mem.best[W]=T;saveMem();
+        busy=false;lastAt=-99;setTimeout(function(){send(line,{});},2600);return;}
+    },
+    tick:function(p){   // dangers and milestones, each said once a crossing
+      if(!on||WITNESSING||REPLAY||CLIP||!p||phase!=='race')return;
+      if(!fired.half&&typeof FINISH!=='undefined'&&p.s>FINISH*0.5){fired.half=1;if(COMMS_DATA.half)send(choose(COMMS_DATA.half),{});}
+      if(typeof ghost!=='undefined'&&ghost&&!ghost.theirs&&typeof ghostGap==='number'&&raceT>8){
+        if(!fired.ahead&&ghostGap<-1.5){fired.ahead=1;send(choose(COMMS_COMMON.ahead),{});}
+        else if(!fired.behind&&ghostGap>4){fired.behind=1;send(choose(COMMS_COMMON.behind),{});}}
+      (COMMS_DATA.probe||[]).forEach(function(pr){if(fired['p'+pr[0]])return;let hot=false;try{hot=!!pr[1]();}catch(e){}
+        if(hot){fired['p'+pr[0]]=1;send(choose(pr[2]),{react:true,urgent:true});}});
+    }
+  };
+  return api;
+})();
 // ------------------------------------------------------------ loop
 // ------------------------------------------------------------ your line
 // the crossing you made before, in this universe. a faint machine and a thread of light where you went.

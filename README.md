@@ -55,7 +55,7 @@ A specific universe can be visited directly with `?seed=` — for example
 
 ## playing
 
-Arrows or WASD steer; space holds (each machine's hold is its own); R restarts; M mutes.
+Arrows or WASD steer; space holds (each machine's hold is its own); R restarts; M mutes; C switches the radio off and on.
 A controller works too: left stick steers, A or a trigger holds, Start restarts. On a phone,
 drag anywhere to steer and hold the button bottom right.
 
@@ -95,6 +95,25 @@ engine, and you hear only its rigging creak as the light changes; TRAWLER is the
 velocity, the wind and the tearing hiss through the stars at warp, is the speed itself, and stays.
 A crossing does not count down. Three clamps let go, felt through the hull, and you are free. In Metronome
 you are released on the pulsar's third pulse. On arrival the drive spools down through the frame.
+Each frame also carries a hull band, the structure resonating in the low mids where the ear lives, so the
+machine still comes through on earphones and small speakers; VECTOR's and TRAWLER's rumble breathes with a
+combustion flutter.
+
+## station control
+
+A human voice on the radio, and the words follow the light. From the Moon home answers live, a few seconds
+late, because your news takes 1.3 seconds to reach them and their answer 1.3 seconds to come back; at lunar
+approach home hands you over to Tranquility. At Saturn home's messages are an hour and a quarter old when they
+arrive. Everywhere further out nothing sent could reach you in time, so home recorded everything before you
+left, including the messages for if something goes wrong ("If you're hearing this…"). In the Well, if you are
+lost, the signal just stops.
+
+It comes to know you. It remembers your first crossing of each world, how many times you have been back, how
+long you have been away, whether you were lost last time, and whether you have just beaten your best. It
+prefers what it hasn't said to you before, and says less on ground you know. It speaks with your browser's own
+voice (a natural English one where the device has it), with the transcript on screen. **comms** at the top, or
+C, switches it off; with the sound off the transcript still comes through. Its memory stays on your device.
+It never speaks while a line is being witnessed or filmed, and it never touches the simulation.
 
 ## how it's built
 
