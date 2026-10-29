@@ -1081,6 +1081,7 @@ let astAcc=0,plmAcc=0,heat=0,glareLvl=0,lightLevel=0.40,warmLvl=0.5,windDir=(Mat
 
 // ------------------------------------------------------------ audio (Web Audio, gesture-gated)
 let actx=null,engOsc=null,engGain=null,engFilt=null,windGain=null,driftGain=null;
+let engSineG=null,engRumbleF=null,engRumbleG=null,engWhine=null,engWhineG=null,bodyNext={tick:0,creak:0};
 let tearGain=null,tearFilt=null,subGain=null,subOsc=null,noiseBuf=null,fxBus=null;
 // a rock going by: a breath of air that isn't there, falling in pitch as it passes
 let whooshBuf=null,whooshT=-9;
@@ -1112,11 +1113,20 @@ function initAudio(){
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return;
     actx=new AC();
-    engOsc=actx.createOscillator(); engOsc.type='sawtooth'; engOsc.frequency.value=42;
-    engFilt=actx.createBiquadFilter(); engFilt.type='lowpass'; engFilt.frequency.value=260;
-    engGain=actx.createGain(); engGain.gain.value=0.0;
-    engOsc.connect(engFilt); engFilt.connect(engGain); engGain.connect(actx.destination);
-    engOsc.start();
+    /*SOUND2*/ // the machine, heard only through its own body: in a vacuum nothing else carries it.
+    // a felt fundamental, a rumble through the frame, and for VECTOR a pump far inside. no tone in the air.
+    engGain=actx.createGain();engGain.gain.value=0;engGain.connect(actx.destination);
+    engFilt=actx.createBiquadFilter();engFilt.type='lowpass';engFilt.frequency.value=90;engFilt.Q.value=0.4;
+    engSineG=actx.createGain();engSineG.gain.value=0.6;engFilt.connect(engSineG);engSineG.connect(engGain);
+    engOsc=actx.createOscillator();engOsc.type='sine';engOsc.frequency.value=38;engOsc.connect(engFilt);engOsc.start();
+    {const rl=Math.floor(actx.sampleRate*1.3),rbuf=actx.createBuffer(1,rl,actx.sampleRate),rd=rbuf.getChannelData(0);
+     let b0=0;for(let i=0;i<rl;i++){b0=b0*0.97+(Math.random()*2-1)*0.03;rd[i]=b0*6;}   // brown: weight, not hiss
+     const rs=actx.createBufferSource();rs.buffer=rbuf;rs.loop=true;
+     engRumbleF=actx.createBiquadFilter();engRumbleF.type='lowpass';engRumbleF.frequency.value=120;engRumbleF.Q.value=0.6;
+     engRumbleG=actx.createGain();engRumbleG.gain.value=1;
+     rs.connect(engRumbleF);engRumbleF.connect(engRumbleG);engRumbleG.connect(engGain);rs.start();}
+    engWhine=actx.createOscillator();engWhine.type='sine';engWhine.frequency.value=1870;
+    engWhineG=actx.createGain();engWhineG.gain.value=0;engWhine.connect(engWhineG);engWhineG.connect(actx.destination);engWhine.start();
     const len=actx.sampleRate*1.5;
     const buf=actx.createBuffer(1,len,actx.sampleRate);
     const d=buf.getChannelData(0);
@@ -1152,14 +1162,53 @@ function initAudio(){
     subOsc.connect(subGain);subGain.connect(actx.destination);subOsc.start();
   }catch(e){actx=null;}
 }
+// each machine as its own frame carries it: f0 felt fundamental, rf rumble cutoff, g level, sm sine mix, wh pump
+const VOICE={ship:{f0:38,fr:9,rf:105,rr:70,b:0.05,g:0.11,gb:0.06,sm:0.7,wh:0.0035},
+  pendulum:{f0:31,fr:3,rf:70,rr:20,b:0.018,g:0.03,gb:0.015,sm:0.5,wh:0},
+  sail:{f0:30,fr:0,rf:60,rr:0,b:0,g:0,gb:0,sm:0,wh:0},
+  trawler:{f0:57,fr:6,rf:240,rr:120,b:0.03,g:0.05,gb:0.03,sm:0.55,wh:0}};
 function setEngine(n,boost,quiet){
-  if(!actx)return;
+  if(!actx||!engRumbleF)return;
   const q=quiet?0.55:1;
-  engOsc.frequency.value=40+n*130;
-  engFilt.frequency.value=240+n*1500;
   const dk=1-duckK*0.75;                 // a hit swallows the engine for a moment
-  engGain.gain.value=(0.04+n*0.055+(boost?0.03:0))*q*dk;
-  windGain.gain.value=n*0.13*q*dk;
+  const k=(player&&player.def)?player.def.key:((VEHICLES[sel]||{}).key||'ship'),V=VOICE[k]||VOICE.ship;
+  engOsc.frequency.value=V.f0+n*V.fr;     // a few hertz of rise: a body under load, not a note
+  engFilt.frequency.value=70+n*60;
+  engRumbleF.frequency.value=V.rf+n*V.rr;
+  engSineG.gain.value=V.sm;
+  engGain.gain.value=(V.b+n*V.g+(boost?V.gb:0))*q*dk;
+  engWhineG.gain.value=V.wh*n*(boost?1:0.35)*q*dk;
+  windGain.gain.value=n*0.13*q*dk;       // the velocity: the wind through the stars stays exactly as it was
+  bodyDetail(k,n,boost,q*dk);
+}
+// the small things a frame passes on: an escapement ticking; rigging creaking as the light changes
+function bodyDetail(k,n,boost,q){
+  if(!actx||!fxBus||!noiseBuf)return;
+  const now=actx.currentTime;
+  if(k==='pendulum'){
+    if(bodyNext.tick<now-1)bodyNext.tick=now;
+    if(now>=bodyNext.tick){bodyNext.tick=now+(boost?0.25:0.5);
+      try{nz(now,0.035,'lowpass',1300,500,0.7,0.022*q*(0.6+n*0.6),0,0.002);}catch(e){}}
+  }else if(k==='sail'){
+    if(bodyNext.creak<now-6)bodyNext.creak=now+1+Math.random()*2;
+    if(now>=bodyNext.creak){bodyNext.creak=now+(boost?1.2+Math.random()*2:2.6+Math.random()*4);
+      try{nz(now,0.42,'bandpass',430,210,4,0.014*q*(0.5+n),(Math.random()-0.5)*0.8,0.08);}catch(e){}}
+  }
+}
+// felt through the hull: a clamp letting go, a click under the hand, the drive cutting out
+function hullThud(f0,f1,dur,g,ng){
+  if(!actx||!fxBus)return;
+  try{const now=actx.currentTime,o=actx.createOscillator(),gn=actx.createGain();o.type='sine';
+    o.frequency.setValueAtTime(f0,now);o.frequency.exponentialRampToValueAtTime(f1,now+dur);
+    gn.gain.setValueAtTime(0.0001,now);gn.gain.exponentialRampToValueAtTime(g,now+0.01);gn.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+    o.connect(gn);gn.connect(fxBus);o.start(now);o.stop(now+dur+0.05);
+    if(ng&&noiseBuf)nz(now,dur*0.7,'lowpass',700,160,0.7,ng,0,0.004);}catch(e){}
+}
+function clampRelease(i){hullThud(96-i*8,44,0.26,0.16,0.07);addTrauma(0.05+i*0.025);}
+function bodyClick(){hullThud(150,90,0.07,0.05,0.025);}
+function freeBreath(){   // free: the frame settles, and the drive comes up underneath you
+  if(!actx||!fxBus||!noiseBuf)return;
+  try{nz(actx.currentTime,1.4,'lowpass',90,260,0.6,0.05,0,0.35);}catch(e){}
 }
 function blip(f,d,g){
   if(!actx)return;
@@ -1257,7 +1306,7 @@ function warpEntry(){
     o.connect(g);g.connect(fxBus);o.start(now);o.stop(now+1);
   }catch(e){}
 }
-function finishTone(){blip(520,0.22,0.16);setTimeout(function(){blip(780,0.34,0.16);},170);}
+function finishTone(){hullThud(58,26,1.3,0.13,0.05);}   // arriving: the drive spools down through the frame
 
 // ------------------------------------------------------------ DOM
 const hudEl=$('hud'),hudPos=$('hudPos'),hudDist=$('hudDist'),hudSpd=$('hudSpd'),
@@ -1371,7 +1420,7 @@ function showVehicle(){
 function cycle(dir){
   const was=sel;sel=(sel+dir+VEHICLES.length)%VEHICLES.length;
   BAY.prev=was;BAY.dir=dir;BAY.slide[sel]=dir*15;
-  showVehicle();blip(560,0.05,0.08);
+  showVehicle();bodyClick();
 }
 $('gNext').addEventListener('click',function(e){e.stopPropagation();initAudio();cycle(1);});
 // on a phone, the bay swipes
@@ -1631,8 +1680,9 @@ function updateCount(dt){
   const step=Math.floor(cdT/0.85);
   if(step!==cdStep){
     cdStep=step;
-    if(step<3){cdEl.textContent=String(3-step);blip(430+step*60,0.1,0.14);}
-    else{cdEl.textContent='CROSS';blip(880,0.2,0.18);phase='race';raceT=0;t=0;simTick=0;}   // the universe's clock starts with the crossing, for everyone
+    cdEl.textContent='';   // released, not started: the clamps let go one by one, and then you are free
+    if(step<3)clampRelease(step);
+    else{freeBreath();phase='race';raceT=0;t=0;simTick=0;}   // the universe's clock starts with the crossing, for everyone
   }
   camera.position.set(player.x*0.55,4.6,16);
   camera.lookAt(player.x*0.8,1,-60);

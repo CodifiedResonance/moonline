@@ -86,6 +86,16 @@ that world instead of pretending.
 vertically — the fastest stretch, the closest pass, the line and the hand-off — then the universe
 speaks, then the world's name and the invitation. Not a screen capture: a line, re-run.
 
+## sound
+
+Sound is placed where it physically is. A vacuum carries nothing, so a machine is heard only through its
+own body: a low pressure through the frame, rising under load, never a tone in the air. VECTOR is a
+combustion rumble with a pump far inside it; PENDULUM's escapement ticks through the frame; CARAVEL has no
+engine, and you hear only its rigging creak as the light changes; TRAWLER is the hum of its intake. The
+velocity, the wind and the tearing hiss through the stars at warp, is the speed itself, and stays.
+A crossing does not count down. Three clamps let go, felt through the hull, and you are free. In Metronome
+you are released on the pulsar's third pulse. On arrival the drive spools down through the frame.
+
 ## how it's built
 
 Each world is one HTML file. No build step, no bundler, no framework — open any
