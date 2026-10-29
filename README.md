@@ -21,11 +21,20 @@ MOONLINE emerges through **The Last Platform**, the fifth world of
 | 05 | The Well | a spinning supermassive black hole | gravity · the deep line costs you time itself |
 
 Edition I is the proving ground. **Edition II is the voyage**, outward from home in order of
-real distance. Its first world is built:
+real distance. It is being built from both ends:
 
 | | world | place | force |
 |---|---|---|---|
-| II | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
+| II · 01 | Mariner | Valles Marineris, Mars | confinement · a canyon 4,000 km long and 7 deep, and the walls do not move |
+| II · 05 | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
+
+Mariner is flown end to end, west to east: from the dawn fog of Noctis Labyrinthus, through the narrows of
+Ius and the width of Melas, into a dust storm down Coprates, through the collapsed blocks of Eos Chaos and out onto
+Chryse at dusk, with the sun setting behind you. The canyon is the seed's, carved fresh every week. The air is
+thin, so nothing but thrust turns you; it is thickest on the floor, seven kilometres down, where TRAWLER feeds;
+the sun reaches CARAVEL only where the canyon opens or high on the walls; PENDULUM banks every metre it falls.
+Rock comes down the walls, mesas stand where the floor fell away, and a dust devil will shove you, and clean your
+panels as it does, the way wind cleaned Spirit's and Opportunity's for years.
 
 Metronome's beam is radio, as the real one is: it is never drawn and the sky never flashes. You hear
 each pulse in the receiver and read it on a chart recorder at the bottom of the screen — the way Jocelyn
@@ -35,7 +44,7 @@ ahead of the pen where the next pulse will land.
 In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
 honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
 hours, whole in a day, and flying sooner is a request for early release. Each crossing carries
-**cargo** that must arrive whole (in Metronome, a clock kept in phase with the beat): exposure wears
+**cargo** that must arrive whole (on Mars, solar panels kept clear of dust; in Metronome, a clock kept in phase with the beat): exposure wears
 it down over time, impact all at once. A line carries the machine's condition at the start, so a
 scarred machine re-runs scarred.
 
@@ -103,15 +112,19 @@ combustion flutter.
 
 A human voice on the radio, and the words follow the light. From the Moon home answers live, a few seconds
 late, because your news takes 1.3 seconds to reach them and their answer 1.3 seconds to come back; at lunar
-approach home hands you over to Tranquility. At Saturn home's messages are an hour and a quarter old when they
-arrive. Everywhere further out nothing sent could reach you in time, so home recorded everything before you
+approach home hands you over to Tranquility. At Mars home is as many light-minutes away as Mars really is today,
+worked out from the date, so what it says is already old: a warning about the narrows arrives once you are through
+them. At Saturn home's messages are an hour and a quarter old when they arrive. Everywhere further out nothing sent could reach you in time, so home recorded everything before you
 left, including the messages for if something goes wrong ("If you're hearing this…"). In the Well, if you are
 lost, the signal just stops.
 
+Edition II is one voyage and the radio carries through it: home knows where else you have been, and Mars is the
+last place on the way out where you can still hear it answer.
+
 It comes to know you. It remembers your first crossing of each world, how many times you have been back, how
 long you have been away, whether you were lost last time, and whether you have just beaten your best. It
-prefers what it hasn't said to you before, and says less on ground you know. It speaks with your browser's own
-voice (a natural English one where the device has it), with the transcript on screen. **comms** at the top, or
+prefers what it hasn't said to you before, and says less on ground you know. She speaks with your browser's own
+voice: a British woman's, a natural one where the device has it, with the transcript on screen. **comms** at the top, or
 C, switches it off; with the sound off the transcript still comes through. Its memory stays on your device.
 It never speaks while a line is being witnessed or filmed, and it never touches the simulation.
 

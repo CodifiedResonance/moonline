@@ -485,6 +485,17 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
   filter:brightness(.3);transition:opacity .6s ease,filter 7s cubic-bezier(.45,0,.7,.4);
 }
 
+/* II · 01 · Mariner — a dust storm crosses the name, slowly, and clears: the way the canyon was found, when the
+   storm that hid Mars from Mariner 9 in 1971 finally settled */
+.ml-track[data-ml-key="mariner"] .ml-track-name{
+  --ml-fx:linear-gradient(90deg,transparent 0%,transparent 30%,rgba(196,132,92,.30) 42%,rgba(214,150,108,.34) 50%,rgba(196,132,92,.30) 58%,transparent 70%,transparent 100%);
+  background-size:340% 100%,100% 100%;background-position:100% 0,0 0;
+}
+.ml-track[data-ml-key="mariner"]:is(:hover,:focus-visible) .ml-track-name{animation:mlStorm 9.4s cubic-bezier(.4,0,.6,1) 1 forwards;}
+@keyframes mlStorm{from{background-position:100% 0,0 0}to{background-position:0% 0,0 0}}
+.ml-track[data-ml-key="mariner"].is-open .ml-track-rule{background:linear-gradient(90deg,#E8C2A2,rgba(214,150,108,.35) 40%,transparent);}
+.ml-track[data-ml-key="mariner"].is-open:hover .ml-enter{color:#F2D6BE;border-color:#D69A72;}
+
 /* II · 05 · Metronome — the beam crosses the name once a turn, every 1.3373 seconds */
 .ml-track[data-ml-key="metronome"] .ml-track-name{
   --ml-fx:linear-gradient(100deg,transparent 0%,transparent 45%,rgba(214,230,255,.24) 50%,transparent 55%,transparent 100%);
@@ -516,6 +527,7 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
 @keyframes mlFeltHeat{0%,100%{background-position:0 0%,0 0}50%{background-position:0 100%,0 0}}
 .ml-track[data-ml-key="behemoth"].ml-felt .ml-track-name{animation:mlBreath 8.4s ease-in-out 1;}
 .ml-track[data-ml-key="metronome"].ml-felt .ml-track-name{animation:mlSweep 1.3373s linear 3;}
+.ml-track[data-ml-key="mariner"].ml-felt .ml-track-name{animation:mlStorm 9.4s cubic-bezier(.4,0,.6,1) 1;}
 
 
 /* ============================================================

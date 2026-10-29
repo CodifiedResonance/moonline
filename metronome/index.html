@@ -2478,7 +2478,7 @@ function updateRelive(dt){
 // a human voice on the radio. from the Moon home answers live, a few seconds late; further out nothing can
 // reach you in time, so home recorded its words before you left, including the ones for if things go wrong.
 // it remembers you. switch it off with the word at the top, or C. it never touches the simulation.
-const COMMS_DATA={"station": [["HOME", "recorded", "RECORDED BEFORE DEPARTURE"]], "release": [["mt.r1", "first", "Recorded before you left. It's a thousand years for anything to reach you there. Listen for the beat. It was keeping time long before anyone heard it."], ["mt.r2", "again", "Back to the first one. Listen. It hasn't missed a beat for you."]], "section": {"THE SCRUFF": [["mt.s2", "any", "There. That kick on the chart. In 1967 someone almost wrote that off as scruff. She didn't."]], "THE SWEEP": [["mt.s3", "any", "The beam is in your face until you pass. Every pulse pushes you back. It turns later."]], "THE HEART": [["mt.s4", "any", "Swing past against its turn and the beat comes faster. That's you, not the star."]], "THE WAKE": [["mt.s5", "any", "Now it's at your back. Every beat carries you."]], "LGM-1": [["mt.s6", "any", "Little green men, they called it, half joking. It wasn't. It was this."]]}, "hitx": [["mt.x1", "any", "That's a scar. The crew will take care of it when you're home."]], "finish": [["mt.f1", "first", "You heard it. That's how we found it too."], ["mt.f2", "best", "{time}. Your best. The beat hasn't changed. You have."], ["mt.f3", "notbest", "Out past it again. It'll still be turning when we're all gone."]],"probe":[["cargo",function(){return typeof cargo!=='undefined'&&cargo<60;},[["mt.p1", "any", "If the clock is drifting, carry on. Bring home what you can."]]]]}, COMMS_COMMON={"hit": [["c.h1", "any", "Knocked, not broken. Keep going."], ["c.h2", "any", "That one will leave a mark. Hold your line."], ["c.h3", "veteran", "Shake it off. You've had worse out there."]], "retry": [["c.rt1", "any", "Back at the start. Take your time. Space is patient."], ["c.rt2", "any", "Again. Nobody's counting but you."], ["c.rt3", "any", "Reset. Breathe. Go when you're ready."], ["c.rt4", "veteran", "From the top. You know the way."]], "hit_rec": [["c.hr1", "any", "If you're hearing this, something has hit you. The hull was built for it. Breathe, and hold your line."]], "cut": [["c.c1", "any", "Reactor's cut itself. It'll come back. Coast and let it cool."]], "cut_rec": [["c.cr1", "any", "If the reactor has cut out, it protected itself. Coast. It comes back."]], "drift": [["c.d1", "first", "You've left the line. It's only you and the stars out there. Come back when you're ready."], ["c.d2", "again", "Drifting again. I don't blame you. It's beautiful out there."]], "ahead": [["c.a1", "any", "You're ahead of your own line."], ["c.a2", "again", "Ahead of your old self. Keep it."]], "behind": [["c.b1", "any", "Your old line is ahead of you. It isn't going anywhere."]]};
+const COMMS_DATA={"station": [["HOME", "recorded", "RECORDED BEFORE DEPARTURE"]], "release": [["mt.r0", "after:mariner", "Recorded before you left. Mars was the last place you could hear us answer. It's a thousand years for anything to reach you now. Listen for the beat."], ["mt.r1", "first", "Recorded before you left. It's a thousand years for anything to reach you there. Listen for the beat. It was keeping time long before anyone heard it."], ["mt.r2", "again", "Back to the first one. Listen. It hasn't missed a beat for you."]], "section": {"THE SCRUFF": [["mt.s2", "any", "There. That kick on the chart. In 1967 someone almost wrote that off as scruff. She didn't."]], "THE SWEEP": [["mt.s3", "any", "The beam is in your face until you pass. Every pulse pushes you back. It turns later."]], "THE HEART": [["mt.s4", "any", "Swing past against its turn and the beat comes faster. That's you, not the star."]], "THE WAKE": [["mt.s5", "any", "Now it's at your back. Every beat carries you."]], "LGM-1": [["mt.s6", "any", "Little green men, they called it, half joking. It wasn't. It was this."]]}, "hitx": [["mt.x1", "any", "That's a scar. The crew will take care of it when you're home."]], "finish": [["mt.f1", "first", "You heard it. That's how we found it too."], ["mt.f2", "best", "{time}. Your best. The beat hasn't changed. You have."], ["mt.f3", "notbest", "Out past it again. It'll still be turning when we're all gone."]],"probe":[["cargo",function(){return typeof cargo!=='undefined'&&cargo<60;},[["mt.p1", "any", "If the clock is drifting, carry on. Bring home what you can."]]]]}, COMMS_COMMON={"hit": [["c.h1", "any", "Knocked, not broken. Keep going."], ["c.h2", "any", "That one will leave a mark. Hold your line."], ["c.h3", "veteran", "Shake it off. You've had worse out there."]], "retry": [["c.rt1", "any", "Back at the start. Take your time. Space is patient."], ["c.rt2", "any", "Again. Nobody's counting but you."], ["c.rt3", "any", "Reset. Breathe. Go when you're ready."], ["c.rt4", "veteran", "From the top. You know the way."]], "hit_rec": [["c.hr1", "any", "If you're hearing this, something has hit you. The hull was built for it. Breathe, and hold your line."]], "cut": [["c.c1", "any", "Reactor's cut itself. It'll come back. Coast and let it cool."]], "cut_rec": [["c.cr1", "any", "If the reactor has cut out, it protected itself. Coast. It comes back."]], "drift": [["c.d1", "first", "You've left the line. It's only you and the stars out there. Come back when you're ready."], ["c.d2", "again", "Drifting again. I don't blame you. It's beautiful out there."]], "ahead": [["c.a1", "any", "You're ahead of your own line."], ["c.a2", "again", "Ahead of your old self. Keep it."]], "behind": [["c.b1", "any", "Your old line is ahead of you. It isn't going anywhere."]]};
 const COMMS=(function(){
   let on=true;try{on=localStorage.getItem('moonline.comms')!=='0';}catch(e){}
   const MEMK='moonline.comms.mem';
@@ -2488,15 +2488,16 @@ const COMMS=(function(){
   const W=TRACK_KEY;let st=0,busy=false,lastAt=-99,queue=null,fired={},hits=0,sess=0,pend=null,voice=null,el=null,hd=null,tx=null,hideT=null;
   function pickVoice(){
     try{if(!window.speechSynthesis)return null;const vs=speechSynthesis.getVoices()||[];if(!vs.length)return null;
-      let want=null;try{want=localStorage.getItem('moonline.comms.voice');}catch(e){}
+      let want=null;try{want=localStorage.getItem('moonline.comms.voice2');}catch(e){}   /*COMMS2*/
       if(want){const v=vs.filter(function(x){return x.name===want;})[0];if(v)return v;}
       const score=function(v){let s=0;const n=v.name||'';
         if(/^en[-_]GB/i.test(v.lang))s+=4;else if(/^en/i.test(v.lang))s+=2;else return -1;
         if(/natural|neural|online|enhanced|premium/i.test(n))s+=5;
-        if(/google uk english|serena|kate|martha|stephanie|sonia|libby|maisie|daniel|arthur/i.test(n))s+=3;
+        if(/female|woman|serena|kate|martha|stephanie|sonia|libby|maisie|hazel|susan|abbi|bella|hollie|olivia|amy|emma|fiona/i.test(n))s+=4;   // she is British
+        if(/\bmale\b|daniel|arthur|oliver|george|thomas|ryan|malcolm|ethan|alfie|elliot|noah|reed|rocko|eddy|grandpa/i.test(n))s-=7;
         if(/compact|espeak|eloquence/i.test(n))s-=4;return s;};
       const best=vs.slice().sort(function(a,b){return score(b)-score(a);})[0];
-      if(best&&score(best)>=0){try{localStorage.setItem('moonline.comms.voice',best.name);}catch(e){}return best;}
+      if(best&&score(best)>=0){try{localStorage.setItem('moonline.comms.voice2',best.name);}catch(e){}return best;}
     }catch(e){}return null;}
   try{if(window.speechSynthesis)speechSynthesis.onvoiceschanged=function(){if(!voice)voice=pickVoice();};}catch(e){}
   function ui(){
@@ -2506,6 +2507,9 @@ const COMMS=(function(){
       hd=el.firstChild;tx=el.lastChild;if(!hd||!tx||hd===tx)el=null;}catch(e){el=null;}
   }
   function station(){const s=COMMS_DATA.station;return s[Math.min(st,s.length-1)];}
+  const LMIN=(function(){try{const d=(Date.now()-946728000000)/86400000,R=Math.PI/180;   // days since J2000
+    const le=(100.464+0.9856091*d)*R,lm=(355.453+0.5240384*d)*R,dx=1.5237*Math.cos(lm)-Math.cos(le),dy=1.5237*Math.sin(lm)-Math.sin(le);
+    return Math.max(3,Math.round(Math.sqrt(dx*dx+dy*dy)*8.317));}catch(e){return 12;}})();
   // squelch: the radio opening and closing. synthesised, so it travels with the rest of the sound.
   function squelch(open){
     if(typeof actx==='undefined'||!actx||!noiseBuf||!fxBus||MUTED)return;
@@ -2514,8 +2518,9 @@ const COMMS=(function(){
   }
   function fill(t){
     const b=mem.best[W];
-    return t.replace('{time}',(player&&player.fTime)?fmtTime(player.fTime):'').replace('{best}',b?fmtTime(b):'')
-      .replace('{runs}',String(mem.runs[W]||0)).replace('{machine}',player?player.def.name:'').replace('{hits}',String(hits));
+    return t.split('{time}').join((player&&player.fTime)?fmtTime(player.fTime):'').split('{best}').join(b?fmtTime(b):'')
+      .split('{runs}').join(String(mem.runs[W]||0)).split('{machine}').join(player?player.def.name:'').split('{hits}').join(String(hits))
+      .split('{lmin}').join(String(LMIN));
   }
   function ok(when,ctx){
     const runs=mem.runs[W]||0,done=mem.done[W]||0,away=(Date.now()-(mem.last[W]||Date.now()))>7*86400000;
@@ -2528,6 +2533,7 @@ const COMMS=(function(){
     if(when==='notbest')return !!(ctx&&!ctx.best)&&done>=1;
     if(when==='clean')return !!(ctx&&ctx.clean)&&done>=1;
     if(when==='marked')return hits>0;
+    if(when.indexOf('after:')===0)return done===0&&(mem.done[when.slice(6)]||0)>0;   // the first time here, having been there
     return false;
   }
   // choose: the most particular line that fits and hasn't been heard, else the least heard
@@ -2535,7 +2541,8 @@ const COMMS=(function(){
     if(!list||!list.length)return null;
     const rank={away:6,best:5,clean:4,first:4,veteran:3,notbest:2,again:2,marked:2,any:1};
     const fit=list.filter(function(l){return ok(l[1],ctx);});if(!fit.length)return null;
-    fit.sort(function(a,b){return ((mem.heard[a[0]]||0)-(mem.heard[b[0]]||0))||((rank[b[1]]||0)-(rank[a[1]]||0));});
+    const rk=function(w){return w.indexOf('after:')===0?7:(rank[w]||0);};
+    fit.sort(function(a,b){return ((mem.heard[a[0]]||0)-(mem.heard[b[0]]||0))||(rk(b[1])-rk(a[1]));});
     return fit[0];
   }
   function send(line,opt){
@@ -2544,13 +2551,13 @@ const COMMS=(function(){
     const now=performance.now()/1000;
     if(busy||(!opt.q&&now-lastAt<(opt.urgent?3:8))){if(!queue||(opt.urgent&&!queue[1].urgent))queue=[line,opt,now];return;}
     const s=station(),live=s[1]==='live';
-    if(opt.react&&!live)opt.tag='RECORDED BEFORE DEPARTURE';
+    if(opt.react&&s[1]==='recorded')opt.tag='RECORDED BEFORE DEPARTURE';
     const delay=(live&&opt.react)?3.6:0.15;   // live from the Moon: your news takes 1.3 s to arrive, the answer 1.3 s back
     busy=true;lastAt=now+delay;mem.heard[line[0]]=(mem.heard[line[0]]||0)+1;saveMem();
     setTimeout(function(){
       ui();const text=fill(line[2]);
       squelch(true);
-      if(el){hd.textContent=s[0]+' \u00b7 '+(opt.tag||s[2]);tx.textContent=text;el.className='on';clearTimeout(hideT);}
+      if(el){hd.textContent=s[0]+' \u00b7 '+fill(opt.tag||s[2]);tx.textContent=text;el.className='on';clearTimeout(hideT);}
       let spoke=false;const readBy=performance.now()+1400+text.length*48;   // the words stay long enough to read
       const finish=function(){if(spoke==='done')return;const wait=readBy-performance.now();if(wait>60){setTimeout(finish,wait);return;}spoke='done';squelch(false);busy=false;lastAt=performance.now()/1000;
         hideT=setTimeout(function(){if(el)el.className='';},2200);
@@ -2560,7 +2567,7 @@ const COMMS=(function(){
         if(!MUTED&&window.speechSynthesis&&window.SpeechSynthesisUtterance){
           if(!voice)voice=pickVoice();
           const u=new SpeechSynthesisUtterance(text);if(voice){u.voice=voice;u.lang=voice.lang;}else u.lang='en-GB';
-          u.rate=0.93;u.pitch=0.92;u.volume=0.9;u.onend=finish;u.onerror=finish;
+          u.rate=0.93;u.pitch=0.97;u.volume=0.9;u.onend=finish;u.onerror=finish;
           setTimeout(function(){try{speechSynthesis.speak(u);spoke=true;}catch(e){finish();}},180);
           setTimeout(finish,1500+text.length*95);   // never wait forever on a voice that doesn't answer
         }else setTimeout(finish,1200+text.length*55);
