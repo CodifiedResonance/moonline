@@ -496,6 +496,18 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
 .ml-track[data-ml-key="mariner"].is-open .ml-track-rule{background:linear-gradient(90deg,#E8C2A2,rgba(214,150,108,.35) 40%,transparent);}
 .ml-track[data-ml-key="mariner"].is-open:hover .ml-enter{color:#F2D6BE;border-color:#D69A72;}
 
+/* II · 03 · Crescent — a faint crescent of light rises behind the top of the name, the way the first plume
+   showed off Io’s edge in a picture taken to steer by. Leave, and it sinks back. */
+.ml-track[data-ml-key="crescent"] .ml-track-name{
+  --ml-fx:linear-gradient(to bottom,rgba(240,236,214,.5) 0%,rgba(226,232,255,.16) 22%,transparent 46%,transparent 100%);
+  background-size:100% 200%,100% 100%;background-position:0 100%,0 0;
+  transition:background-position 1.6s ease;
+}
+.ml-track[data-ml-key="crescent"]:is(:hover,:focus-visible) .ml-track-name{background-position:0 0%,0 0;transition:background-position 5s cubic-bezier(.3,0,.4,1);}
+@keyframes mlFeltCrescent{0%,100%{background-position:0 100%,0 0}50%{background-position:0 0%,0 0}}
+.ml-track[data-ml-key="crescent"].is-open .ml-track-rule{background:linear-gradient(90deg,#E9DFB0,rgba(214,196,120,.35) 40%,transparent);}
+.ml-track[data-ml-key="crescent"].is-open:hover .ml-enter{color:#F2EAC6;border-color:#CDBB78;}
+
 /* II · 04 · Fathom — the name goes down: the blue dark rises over the letters from below, slowly, as the light
    does on the way into Neptune. Leave, and it comes back up into the light. */
 .ml-track[data-ml-key="fathom"] .ml-track-name{
@@ -541,6 +553,7 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
 .ml-track[data-ml-key="metronome"].ml-felt .ml-track-name{animation:mlSweep 1.3373s linear 3;}
 .ml-track[data-ml-key="mariner"].ml-felt .ml-track-name{animation:mlStorm 9.4s cubic-bezier(.4,0,.6,1) 1;}
 .ml-track[data-ml-key="fathom"].ml-felt .ml-track-name{animation:mlFeltDeep 7s ease-in-out 1;}
+.ml-track[data-ml-key="crescent"].ml-felt .ml-track-name{animation:mlFeltCrescent 6s ease-in-out 1;}
 
 
 /* ============================================================

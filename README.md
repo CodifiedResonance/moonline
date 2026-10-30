@@ -21,11 +21,12 @@ MOONLINE emerges through **The Last Platform**, the fifth world of
 | 05 | The Well | a spinning supermassive black hole | gravity · the deep line costs you time itself |
 
 Edition I is the proving ground. **Edition II is the voyage**, outward from home in order of
-real distance: Baltis 01, Mariner 02, Plume 03, Fathom 04, Metronome 05, and then the unseen. Three have emerged:
+real distance: Baltis 01, Mariner 02, Plume 03, Fathom 04, Metronome 05, and then the unseen. Four have emerged:
 
 | | world | place | force |
 |---|---|---|---|
 | II · 02 | Mariner | Valles Marineris, Mars | confinement · a canyon 4,000 km long and 7 deep, and the walls do not move |
+| II · 03 | Crescent | Io, the most volcanic world we know | the squeeze, and the dose · Jupiter's radiation counts every second you linger |
 | II · 04 | Fathom | Neptune, the planet found by mathematics | wind, then weight · the fastest winds in the solar system, then a dark that ends in diamond |
 | II · 05 | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
 
@@ -36,6 +37,16 @@ thin, so nothing but thrust turns you; it is thickest on the floor, seven kilome
 the sun reaches CARAVEL only where the canyon opens or high on the walls; PENDULUM banks every metre it falls.
 Rock comes down the walls, mesas stand where the floor fell away, and a dust devil will shove you, and clean your
 panels as it does, the way wind cleaned Spirit's and Opportunity's for years.
+
+Crescent skims Io, low over the sulphur plains, with Jupiter filling a quarter of the sky. Its first plume was
+seen in March 1979 by Linda Morabito, as a faint crescent off Io's edge in a Voyager 1 image taken to steer by;
+the crossing opens on one, lit from behind. Jupiter's tides squeeze Io until it erupts: the plumes are columns of
+sulphur gas that lift you, opening into umbrellas that fall back as frost, pecking at the machine. Then Loki's lava
+lake, the eclipse where Io's thin air freezes and falls, Pele's great umbrella over its red ring, and the flux tube,
+the current between Io and Jupiter, where the radiation peaks. The dose keeps count the whole way and leaves its
+mark: speed is the only shield. TRAWLER feeds on the plumes, the only air there is; CARAVEL has a twenty-seventh of
+Earth's sunlight, but a plume fills the sail; PENDULUM banks every rise and fall. The cargo is images, fogging in
+the radiation.
 
 Fathom is the first world you go down into rather than across. Neptune was found in 1846 with mathematics,
 from the way it tugged at Uranus, before anyone had seen it; only Voyager 2 has been there. You fall through the
@@ -55,7 +66,7 @@ ahead of the pen where the next pulse will land.
 In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
 honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
 hours, whole in a day, and flying sooner is a request for early release. Each crossing carries
-**cargo** that must arrive whole (on Mars, solar panels kept clear of dust; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
+**cargo** that must arrive whole (on Mars, solar panels kept clear of dust; over Io, images kept clear of the radiation; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
 it down over time, impact all at once. A line carries the machine's condition at the start, so a
 scarred machine re-runs scarred.
 
