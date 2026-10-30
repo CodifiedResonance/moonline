@@ -52,17 +52,27 @@
       if(window.history && window.history.replaceState){
         window.history.replaceState({}, '', window.location.pathname);
       }
-      // receive the witness at the veil they just lifted
+      // receive the witness at the veil they just lifted. but at the end of an edition there is no skipping
+      // what comes next: the page opens on the drop between the editions, the gold thread coming down into the
+      // voyage's beginning, and the witness descends into it themselves.
+      var at = -1;
+      for(var j=0;j<tracks.length;j++) if(tracks[j].getAttribute('data-ml-key')===key) at = j;
+      var nxt = tracks[at+1] || tracks[at];
+      var edgeOfEdition = !!(tracks[at+1] && tracks[at+1].parentNode !== tracks[at].parentNode);
+      var deep = root.querySelector('.ml-deep');
+      if(edgeOfEdition && deep){
+        try{ if('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'; }catch(e){}
+        var moved = false, mark = function(){ moved = true; };
+        ['wheel','touchstart','keydown','pointerdown'].forEach(function(ev){ window.addEventListener(ev, mark, {once:true, passive:true}); });
+        var land = function(){
+          if(moved) return;   // once they move, the page is theirs
+          try{ window.scrollTo(0, Math.max(0, deep.getBoundingClientRect().top + (window.pageYOffset||0) - 20)); }catch(e){}
+        };
+        land(); setTimeout(land, 60); setTimeout(land, 400); setTimeout(land, 1200);   // again as the type settles
+        return;
+      }
       setTimeout(function(){
-        try{
-          for(var i=0;i<tracks.length;i++){
-            if(tracks[i].getAttribute('data-ml-key')===key){
-              var nxt = tracks[i+1] || tracks[i];
-              nxt.scrollIntoView({behavior:'smooth', block:'center'});
-              break;
-            }
-          }
-        }catch(e){}
+        try{ nxt.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
       }, 650);
     }catch(e){}
   })();
