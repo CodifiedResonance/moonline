@@ -21,11 +21,12 @@ MOONLINE emerges through **The Last Platform**, the fifth world of
 | 05 | The Well | a spinning supermassive black hole | gravity · the deep line costs you time itself |
 
 Edition I is the proving ground. **Edition II is the voyage**, outward from home in order of
-real distance. It is being built from both ends:
+real distance: Baltis 01, Mariner 02, Plume 03, Fathom 04, Metronome 05, and then the unseen. Three have emerged:
 
 | | world | place | force |
 |---|---|---|---|
-| II · 01 | Mariner | Valles Marineris, Mars | confinement · a canyon 4,000 km long and 7 deep, and the walls do not move |
+| II · 02 | Mariner | Valles Marineris, Mars | confinement · a canyon 4,000 km long and 7 deep, and the walls do not move |
+| II · 04 | Fathom | Neptune, the planet found by mathematics | wind, then weight · the fastest winds in the solar system, then a dark that ends in diamond |
 | II · 05 | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
 
 Mariner is flown end to end, west to east: from the dawn fog of Noctis Labyrinthus, through the narrows of
@@ -36,6 +37,16 @@ the sun reaches CARAVEL only where the canyon opens or high on the walls; PENDUL
 Rock comes down the walls, mesas stand where the floor fell away, and a dust devil will shove you, and clean your
 panels as it does, the way wind cleaned Spirit's and Opportunity's for years.
 
+Fathom is the first world you go down into rather than across. Neptune was found in 1846 with mathematics,
+from the way it tugged at Uranus, before anyone had seen it; only Voyager 2 has been there. You fall through the
+haze into the bands, jets near 2,400 km/h that change direction as you fall through them: the moving air drags the
+machine toward its own motion, so let go of the controls and the sky takes you, sideways, up, out. Then the edge
+of a great dark storm that turns you round its eye, the black below the clouds where the only light is the
+machine's, the hot thick mantle where everything slows, and at the bottom the diamonds, falling with you. CARAVEL
+has almost no sun this far out and sails on the crosswind instead; PENDULUM goes heavy and banks the gusts it
+refuses; TRAWLER feeds on the hydrogen that thickens as you fall; VECTOR fights it all, and the deep is hot. The
+cargo is a sealed sphere of instruments, carried down under rising weight.
+
 Metronome's beam is radio, as the real one is: it is never drawn and the sky never flashes. You hear
 each pulse in the receiver and read it on a chart recorder at the bottom of the screen — the way Jocelyn
 Bell Burnell first found it in 1967, as a bit of scruff on the paper at 81.5 MHz — with a faint mark
@@ -44,7 +55,7 @@ ahead of the pen where the next pulse will land.
 In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
 honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
 hours, whole in a day, and flying sooner is a request for early release. Each crossing carries
-**cargo** that must arrive whole (on Mars, solar panels kept clear of dust; in Metronome, a clock kept in phase with the beat): exposure wears
+**cargo** that must arrive whole (on Mars, solar panels kept clear of dust; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
 it down over time, impact all at once. A line carries the machine's condition at the start, so a
 scarred machine re-runs scarred.
 
