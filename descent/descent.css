@@ -485,6 +485,17 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
   filter:brightness(.3);transition:opacity .6s ease,filter 7s cubic-bezier(.45,0,.7,.4);
 }
 
+/* II · 01 · Echo — a radar pulse goes out across the name and its echo comes back, faint and warm, the way
+   Magellan traced Baltis Vallis through a cloud no eye can see through. Nothing moves but the light inside. */
+.ml-track[data-ml-key="echo"] .ml-track-name{
+  --ml-fx:linear-gradient(90deg,transparent 0%,transparent 44%,rgba(244,196,140,.30) 49%,rgba(255,226,190,.36) 50%,rgba(244,196,140,.12) 54%,transparent 60%,transparent 100%);
+  background-size:300% 100%,100% 100%;background-position:100% 0,0 0;
+}
+.ml-track[data-ml-key="echo"]:is(:hover,:focus-visible) .ml-track-name{animation:mlEcho 6.4s cubic-bezier(.45,0,.55,1) 1 forwards;}
+@keyframes mlEcho{0%{background-position:100% 0,0 0}50%{background-position:0% 0,0 0}100%{background-position:100% 0,0 0}}
+.ml-track[data-ml-key="echo"].is-open .ml-track-rule{background:linear-gradient(90deg,#F0C89A,rgba(220,150,90,.35) 40%,transparent);}
+.ml-track[data-ml-key="echo"].is-open:hover .ml-enter{color:#F6DCC0;border-color:#DCA06A;}
+
 /* II · 02 · Mariner — a dust storm crosses the name, slowly, and clears: the way the canyon was found, when the
    storm that hid Mars from Mariner 9 in 1971 finally settled */
 .ml-track[data-ml-key="mariner"] .ml-track-name{
@@ -532,6 +543,22 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
   100%{background-position:0% 0,0 0}
 }
 
+/* beyond · Still — the unseen. it emerges only when the whole voyage is crossed, and it is still emerging: it
+   cannot be entered yet. Nothing on it moves. Rest on it and the cold comes into the letters, slowly. */
+.ml-track[hidden]{display:none;}
+.ml-track.ml-unseen{cursor:default;}
+.ml-track.ml-unseen .ml-track-num{letter-spacing:.3em;}
+.ml-track.ml-unseen .ml-track-rule{background:linear-gradient(90deg,rgba(214,232,255,.55),rgba(170,200,240,.16) 40%,transparent);}
+.ml-track.ml-emerge.is-in.ml-unseen{opacity:.7;transition:opacity 6s ease,transform 6s cubic-bezier(.2,.7,.2,1);}
+.ml-track.ml-unseen .ml-held-label{color:rgba(214,232,255,.62);}
+.ml-track[data-ml-key="still"] .ml-track-name{
+  --ml-base:linear-gradient(176deg,#E2E6EE,#9CA6B6);
+  --ml-fx:linear-gradient(to bottom,transparent 0%,transparent 46%,rgba(150,196,255,.62) 70%,rgba(196,226,255,.86) 100%);
+  background-size:100% 200%,100% 100%;background-position:0 0%,0 0;
+  transition:background-position 3s ease;
+}
+.ml-track[data-ml-key="still"]:is(:hover,:focus-visible) .ml-track-name{background-position:0 100%,0 0;transition:background-position 12s cubic-bezier(.4,0,.6,1);}
+
 @media (prefers-reduced-motion:reduce){
   .ml-track:not([data-ml-key="well"]):is(:hover,:focus-visible,.ml-felt) .ml-track-name{animation:none!important;transition:none!important;}   /* the well's fade is not motion: it stays */
 }
@@ -551,6 +578,7 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
 @keyframes mlFeltHeat{0%,100%{background-position:0 0%,0 0}50%{background-position:0 100%,0 0}}
 .ml-track[data-ml-key="behemoth"].ml-felt .ml-track-name{animation:mlBreath 8.4s ease-in-out 1;}
 .ml-track[data-ml-key="metronome"].ml-felt .ml-track-name{animation:mlSweep 1.3373s linear 3;}
+.ml-track[data-ml-key="echo"].ml-felt .ml-track-name{animation:mlEcho 6.4s cubic-bezier(.45,0,.55,1) 1;}
 .ml-track[data-ml-key="mariner"].ml-felt .ml-track-name{animation:mlStorm 9.4s cubic-bezier(.4,0,.6,1) 1;}
 .ml-track[data-ml-key="fathom"].ml-felt .ml-track-name{animation:mlFeltDeep 7s ease-in-out 1;}
 .ml-track[data-ml-key="crescent"].ml-felt .ml-track-name{animation:mlFeltCrescent 6s ease-in-out 1;}

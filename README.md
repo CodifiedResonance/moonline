@@ -1,6 +1,6 @@
 # moonline
 
-Five crossings, and the voyage beyond them. One intensement — a re-feel of the forces at play in the universe:
+Five crossings, and the voyage beyond them, and beyond that the unseen. One intensement — a re-feel of the forces at play in the universe:
 impact, light, heat, current, gravity. The science is the antagonist.
 
 MOONLINE emerges through **The Last Platform**, the fifth world of
@@ -21,14 +21,31 @@ MOONLINE emerges through **The Last Platform**, the fifth world of
 | 05 | The Well | a spinning supermassive black hole | gravity · the deep line costs you time itself |
 
 Edition I is the proving ground. **Edition II is the voyage**, outward from home in order of
-real distance: Baltis 01, Mariner 02, Plume 03, Fathom 04, Metronome 05, and then the unseen. Four have emerged:
+real distance: Echo 01, Mariner 02, Crescent 03, Fathom 04, Metronome 05. All five have emerged:
 
 | | world | place | force |
 |---|---|---|---|
+| II · 01 | Echo | Baltis Vallis, Venus | heat, under weight · ninety times Earth's air at 465°C, and nothing cools you |
 | II · 02 | Mariner | Valles Marineris, Mars | confinement · a canyon 4,000 km long and 7 deep, and the walls do not move |
 | II · 03 | Crescent | Io, the most volcanic world we know | the squeeze, and the dose · Jupiter's radiation counts every second you linger |
 | II · 04 | Fathom | Neptune, the planet found by mathematics | wind, then weight · the fastest winds in the solar system, then a dark that ends in diamond |
 | II · 05 | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
+
+Beyond the five, **the unseen**. It is not on the descent until a witness has crossed the whole voyage on their
+device; then it emerges there, named, and is still emerging: Still, the Boomerang Nebula, about one degree above
+absolute zero, colder than the light left over from the beginning of the universe.
+
+Echo flies Baltis Vallis, the longest channel in the solar system: about 6,800 km, longer than the Nile, and barely
+two wide, cut by lava into the plains of Venus. No eye has seen it. Venus is under cloud for good; Venera 15 and 16
+glimpsed parts of the channel by radar in 1984, and Magellan traced the whole of it by radar in 1991. So the crossing
+gives you a radar strip at the bottom of the screen, the channel and the rock as their echo returns them, ahead of
+an orange murk. The air is ninety times Earth's at about 465°C and nothing cools you: the heat only climbs, fastest
+on the channel floor. Climb and it cools, but above the banks the sky is racing round the planet (it circles Venus
+in about four days, always one way), and the higher you go the harder it takes you off the channel. VECTOR's burn
+adds its own heat; CARAVEL has no sun to speak of and sails the high wind; TRAWLER feasts on the thickest air there
+is, on the floor, and every breath of it is 465°C; PENDULUM's mass soaks the heat while it holds, and the wind can
+barely move it. The cargo is a capsule chilled before you left, as the Venera landers were, and its cold runs out
+faster the hotter the machine. Venera 13 lasted 127 minutes on the surface.
 
 Mariner is flown end to end, west to east: from the dawn fog of Noctis Labyrinthus, through the narrows of
 Ius and the width of Melas, into a dust storm down Coprates, through the collapsed blocks of Eos Chaos and out onto
@@ -66,7 +83,7 @@ ahead of the pen where the next pulse will land.
 In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
 honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
 hours, whole in a day, and flying sooner is a request for early release. Each crossing carries
-**cargo** that must arrive whole (on Mars, solar panels kept clear of dust; over Io, images kept clear of the radiation; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
+**cargo** that must arrive whole (on Venus, a capsule that must arrive cold; on Mars, solar panels kept clear of dust; over Io, images kept clear of the radiation; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
 it down over time, impact all at once. A line carries the machine's condition at the start, so a
 scarred machine re-runs scarred.
 
