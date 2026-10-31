@@ -34,6 +34,11 @@
   }
 
   var crossed = readCrossed();
+  // worlds this device chose to forget: the bridge below must not bring them back
+  var FORGOT = 'moonline.crossings.forgot';
+  function readForgot(){ try{ var v = JSON.parse(window.localStorage.getItem(FORGOT) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+  function writeForgot(a){ try{ window.localStorage.setItem(FORGOT, JSON.stringify(a)); }catch(e){} }
+  var lineKeys = [];
 
   /* A track lives on its own origin now, so it cannot write to this page's
      storage and has no parent to message. It carries the crossing home in
@@ -46,12 +51,14 @@
       var key = decodeURIComponent(m[1]);
       var known = false;
       for(var i=0;i<tracks.length;i++) if(tracks[i].getAttribute('data-ml-key')===key) known = true;
-      if(!known) return;
+      // remembered even if this page doesn't know the world yet: when it does, the crossing is already here
       crossed[key] = { at: Date.now() };
       writeCrossed(crossed);
+      writeForgot(readForgot().filter(function(k){ return k !== key; }));
       if(window.history && window.history.replaceState){
         window.history.replaceState({}, '', window.location.pathname);
       }
+      if(!known) return;
       // receive the witness at the veil they just lifted. but at the end of an edition there is no skipping
       // what comes next: the page opens on the drop between the editions, the gold thread coming down into the
       // voyage's beginning, and the witness descends into it themselves.
@@ -176,11 +183,37 @@
   var reset = root.querySelector('[data-ml-reset]');
   if(reset){
     reset.addEventListener('click', function(){
+      var f = Object.keys(crossed).concat(lineKeys);
+      writeForgot(f.filter(function(k, i){ return f.indexOf(k) === i; }));
       crossed = {};
       writeCrossed(crossed);
       paint();
     });
   }
+
+  // ---- the bridge: the worlds keep their lines on their own origin. a hidden page from there tells this one
+  // which worlds have a line on this device, so a crossing counts however you came home. names only.
+  (function(){
+    try{
+      var base = TRACKS_BASE.replace(/\/*$/, '/');
+      var origin = new URL(base).origin;
+      window.addEventListener('message', function(ev){
+        var d = ev && ev.data;
+        if(ev.origin !== origin || !d || d.moonline !== 'lines' || !Array.isArray(d.keys)) return;
+        lineKeys = d.keys.filter(function(k){ return /^[a-z0-9_-]+$/.test(k); });
+        var forgot = readForgot(), changed = false;
+        lineKeys.forEach(function(k){
+          if(!crossed[k] && forgot.indexOf(k) < 0){ crossed[k] = { at: Date.now(), line: true }; changed = true; }
+        });
+        if(changed){ writeCrossed(crossed); paint(); }
+      });
+      var f = document.createElement('iframe');
+      f.src = base + 'descent/bridge.html';
+      f.title = 'moonline bridge'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
+      f.style.cssText = 'position:absolute;width:1px;height:1px;border:0;opacity:0;pointer-events:none;left:-9999px;top:0';
+      root.appendChild(f);
+    }catch(e){}
+  })();
 
   // ---- API for the tracks to call on finish (via postMessage from the iframe/game) ----
   // A track, on a clean finish, can do:  parent.postMessage({moonline:'crossed', track:'crossing'}, '*')

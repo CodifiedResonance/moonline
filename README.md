@@ -169,6 +169,12 @@ The page on codifiedresonance.com that leads into the worlds is served from here
 and `descent/descent.js`. The embed on the site is a few lines that load them, so the descent changes
 when this repo is pushed, with nothing to paste.
 
+A crossing reaches the descent two ways. The way home carries it (`?crossed=`), and the descent also loads
+`descent/bridge.html` unseen from the worlds' own origin: it reads which worlds have a line on this device and
+tells the page, so a crossing counts however the witness came home (the back button, leave, a direct link). Only
+the names of the worlds pass between them, inside the browser. "Forget my crossings" is respected: the bridge
+does not bring back what was forgotten.
+
 The Last Platform's node page (`codifiedresonance.com/last-platform/node`) is served the same way, from
 `platform/node.css` and `platform/node.js`. To add a game to the platform, add one object to the
 `EMERGENCES` array in `platform/node.js` and push.
