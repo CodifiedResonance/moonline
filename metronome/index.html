@@ -159,6 +159,9 @@ body.clipping #comms,body.clipping #btnComms{display:none!important}
   color:rgba(232,234,238,.3);-webkit-tap-highlight-color:transparent;transition:color .35s ease}
 #btnLeave:hover,#btnLeave:focus-visible{color:rgba(232,234,238,.75);outline:none}
 #btnLeave.arm{color:rgba(232,234,238,.9)}
+/*ASKING*/ body.asking #btnLeave:not(.arm),body.asking #btnRestart:not(.arm),body.asking #btnSound,body.asking #btnComms{opacity:0;pointer-events:none}
+#btnLeave,#btnRestart,#btnSound{transition:color .35s ease,opacity .25s ease}
+#btnLeave.arm,#btnRestart.arm{color:rgba(232,234,238,.95);text-decoration:underline;text-underline-offset:6px;text-decoration-color:rgba(232,234,238,.4)}
 #boostBtn{position:fixed;right:18px;bottom:60px;width:88px;height:88px;display:none;align-items:center;
   justify-content:center;border:1px solid rgba(232,234,238,.35);border-radius:50%;font-size:11px;
   letter-spacing:.24em;color:rgba(232,234,238,.85);background:rgba(255,255,255,.04);z-index:5}
@@ -1638,9 +1641,9 @@ $('btnLaunch').addEventListener('click',function(){initAudio();confirmPick();});
     if(phase!=='count'&&phase!=='race'){leave();return;}
     const now=Date.now();
     if(armedAt&&now-armedAt<2600){leave();return;}
-    armedAt=now; b.textContent='leave the crossing? again'; b.classList.add('arm');
+    armedAt=now; b.textContent=(coarse?'tap again to leave':'leave the crossing? again'); b.classList.add('arm');document.body.classList.add('asking');
     clearTimeout(resetT);
-    resetT=setTimeout(function(){armedAt=0;b.textContent='leave';b.classList.remove('arm');},2600);
+    resetT=setTimeout(function(){armedAt=0;b.textContent='leave';b.classList.remove('arm');document.body.classList.remove('asking');},2600);
   }
   b.addEventListener('pointerdown',function(e){e.stopPropagation();});
   b.addEventListener('click',function(e){e.stopPropagation();ask();});
@@ -1667,8 +1670,8 @@ setTimeout(function(){try{
     if(fromKey||phase!=='race'){againNow();return;}
     const now=Date.now();
     if(armedAt&&now-armedAt<2600){againNow();return;}
-    armedAt=now;b.textContent='restart? again';b.classList.add('arm');
-    clearTimeout(resetT);resetT=setTimeout(function(){armedAt=0;b.textContent='restart';b.classList.remove('arm');},2600);
+    armedAt=now;b.textContent=(coarse?'tap again to restart':'restart? again');b.classList.add('arm');document.body.classList.add('asking');
+    clearTimeout(resetT);resetT=setTimeout(function(){armedAt=0;b.textContent='restart';b.classList.remove('arm');document.body.classList.remove('asking');},2600);
   }
   b.addEventListener('pointerdown',function(e){e.stopPropagation();});
   b.addEventListener('click',function(e){e.stopPropagation();ask(false);});
