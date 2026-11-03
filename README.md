@@ -30,10 +30,23 @@ real distance: Echo 01, Mariner 02, Crescent 03, Fathom 04, Metronome 05. All fi
 | II · 03 | Crescent | Io, the most volcanic world we know | the squeeze, and the dose · Jupiter's radiation counts every second you linger |
 | II · 04 | Fathom | Neptune, the planet found by mathematics | wind, then weight · the fastest winds in the solar system, then a dark that ends in diamond |
 | II · 05 | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
+| beyond | Still | the Boomerang Nebula, the coldest place known | cold · one machine, and all it has is the warmth it carries |
 
-Beyond the five, **the unseen**. It is not on the descent until a witness has crossed the whole voyage on their
-device; then it emerges there, named, and is still emerging: Still, the Boomerang Nebula, about one degree above
-absolute zero, colder than the light left over from the beginning of the universe.
+Beyond the five, **Still**: the Boomerang Nebula, in Centaurus, about 5,000 light-years out. It is not on the descent
+until a witness has crossed the whole voyage on their device; then it emerges there, and can be entered. A dying star
+is throwing itself off at about 164 km/s, and the gas has cooled as it spread to about one degree above absolute zero,
+colder than the light left over from the beginning of the universe (Sahai and Nyman, 1997): the only place known where
+that light warms what it touches, so against the sky's own glow it is darker than the dark. That patch has been in
+every world's sky. In Still it is dead ahead, and you fly into it.
+
+The four stay home: nothing they burn would last out there. One machine goes, **PHONON**, built for the cold, and
+all it has is the warmth it left with. It radiates through every surface, and a warm body radiates fastest. Hold,
+and the lattice folds: less surface, less loss, and less speed and steering too. Too cold and it stiffens; let the
+warmth go out and it is still, and the crossing ends there and leaves no line. The gas is far too thin to push
+anything, but what the outflow carries comes at you at 164 km/s: knots of dust and frozen gas, to dodge open or take
+folded. Through the shell, the outflow, the lobes lit only by scattered starlight, and the dust of the waist that
+hides the star, and out into the star's own light, the only warmth there is. The cargo is tardigrades, asleep: the
+cold cannot hurt them, only a knock can.
 
 Echo flies Baltis Vallis, the longest channel in the solar system: about 6,800 km, longer than the Nile, and barely
 two wide, cut by lava into the plains of Venus. No eye has seen it. Venus is under cloud for good; Venera 15 and 16
@@ -83,7 +96,7 @@ ahead of the pen where the next pulse will land.
 In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
 honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
 hours, whole in a day, and flying sooner is a request for early release. Each crossing carries
-**cargo** that must arrive whole (on Venus, a capsule that must arrive cold; on Mars, solar panels kept clear of dust; over Io, images kept clear of the radiation; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
+**cargo** that must arrive whole (in the Boomerang, tardigrades asleep; on Venus, a capsule that must arrive cold; on Mars, solar panels kept clear of dust; over Io, images kept clear of the radiation; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
 it down over time, impact all at once. A line carries the machine's condition at the start, so a
 scarred machine re-runs scarred.
 

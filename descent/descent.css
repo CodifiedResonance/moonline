@@ -543,14 +543,17 @@ select.ml-input option{background:#0a0e16;color:#F3F6FF;}
   100%{background-position:0% 0,0 0}
 }
 
-/* beyond · Still — the unseen. it emerges only when the whole voyage is crossed, and it is still emerging: it
-   cannot be entered yet. Nothing on it moves. Rest on it and the cold comes into the letters, slowly. */
+/* beyond · Still — it emerges only when the whole voyage is crossed, and then it can be entered. Nothing on it
+   moves. Rest on it and the cold comes into the letters, slowly. */
 .ml-track[hidden]{display:none;}
 .ml-track.ml-unseen{cursor:default;}
+.ml-track.ml-unseen.is-open{cursor:pointer;}
 .ml-track.ml-unseen .ml-track-num{letter-spacing:.3em;}
 .ml-track.ml-unseen .ml-track-rule{background:linear-gradient(90deg,rgba(214,232,255,.55),rgba(170,200,240,.16) 40%,transparent);}
-.ml-track.ml-emerge.is-in.ml-unseen{opacity:.7;transition:opacity 6s ease,transform 6s cubic-bezier(.2,.7,.2,1);}
-.ml-track.ml-unseen .ml-held-label{color:rgba(214,232,255,.62);}
+.ml-track.ml-emerge.is-in.ml-unseen{opacity:1;transition:opacity 6s ease,transform 6s cubic-bezier(.2,.7,.2,1);}
+.ml-track[data-ml-key="still"].is-open:hover .ml-enter{color:#E6F0FF;border-color:#A8C4EE;}
+.ml-track[data-ml-key="still"].ml-felt .ml-track-name{animation:mlFeltCold 12s cubic-bezier(.4,0,.6,1) 1;}
+@keyframes mlFeltCold{0%,100%{background-position:0 0%,0 0}50%{background-position:0 100%,0 0}}
 .ml-track[data-ml-key="still"] .ml-track-name{
   --ml-base:linear-gradient(176deg,#E2E6EE,#9CA6B6);
   --ml-fx:linear-gradient(to bottom,transparent 0%,transparent 46%,rgba(150,196,255,.62) 70%,rgba(196,226,255,.86) 100%);
