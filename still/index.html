@@ -4,18 +4,18 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <title>MOONLINE — Edition II: Still</title>
-<meta name="description" content="The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning. One machine, and only the warmth it carries."/>
+<meta name="description" content="The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning. Three machines built for the cold, and nothing out there gives warmth back."/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="MOONLINE · Codified Resonance"/>
 <meta property="og:title" content="MOONLINE — Still"/>
-<meta property="og:description" content="The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning. One machine, and only the warmth it carries."/>
+<meta property="og:description" content="The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning. Three machines built for the cold, and nothing out there gives warmth back."/>
 <meta property="og:url" content="https://moonline.codifiedresonance.com/still/"/>
 <meta property="og:image" content="https://moonline.codifiedresonance.com/og/still.png"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="MOONLINE — Still"/>
-<meta name="twitter:description" content="The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning. One machine, and only the warmth it carries."/>
+<meta name="twitter:description" content="The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning. Three machines built for the cold, and nothing out there gives warmth back."/>
 <meta name="twitter:image" content="https://moonline.codifiedresonance.com/og/still.png"/>
 <meta name="theme-color" content="#04050a"/>
 <style>
@@ -44,7 +44,7 @@ canvas{display:block}
 #heatWrap{margin-top:5px;width:150px;height:2px;background:rgba(255,178,102,.14)}
 #heatFill{height:2px;width:100%;background:#ffc489;transition:width .05s linear}
 #heatFill.over{background:#bcd6ff}
-#btnPrev,#btnNext,#gNext,#gDots{display:none!important}   /* one machine */
+
 #hintKeys{position:absolute;right:18px;bottom:22px;text-align:right}
 
 #announce{position:fixed;top:16%;width:100%;text-align:center;letter-spacing:.55em;font-size:14px;
@@ -258,7 +258,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 <div id="gridUI">
   <div id="gTop">
     <div id="gTitle" class="lbl"><span class="gPre">moonline · edition ii — </span>still</div>
-    <div id="gSub">The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning of the universe.<br/>The four stayed home. Nothing they burn would last out here.<br/>Destination: the dying star at its heart.</div>
+    <div id="gSub">The Boomerang Nebula: one degree above nothing, colder than the light left over from the beginning of the universe.<br/>The four stayed home: nothing they burn would last out here. Three machines are built for it.<br/>Destination: the dying star at its heart.</div>
   </div>
   <div id="gCard">
     <div id="gRow">
@@ -278,7 +278,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
     </div>
     <button id="btnLaunch">LAUNCH</button>
     <div id="gNext" role="button" aria-label="Next machine"><span id="gNextLbl"></span></div>
-    <div id="gHint" class="lbl"><span class="hD">one machine · click it to launch</span><span class="hM">one machine · then it is you and the cold</span></div>
+    <div id="gHint" class="lbl"><span class="hD">‹ › to choose · click the machine to launch</span><span class="hM">swipe to choose · then it is you and the cold</span></div>
   </div>
 </div>
 
@@ -514,7 +514,7 @@ function mediumMul(def,sec){return 1;}
 // THE WARMTH. PHONON leaves home warm and nothing out here gives it back but the star. it radiates through every
 // surface, and a warm body radiates fastest. folded, it shows the cold less of itself.
 let warmth=100,frozen=false;
-const W_LOSS=4.5,W_FOLD=0.72,W_STAR=3.2,W_STIFF=0.35,F_THR=0.15,F_STEER=0.72;
+const M_LOSS=0.7,M_GAIN=0.3,M_SPEND=2,M_BASE=0.82,M_BOOST=0.5,TC=9.2,Q_COOL=0.5,Q_LEAD=0.6,Q_FULL=0.85,Q_CRUISE=0.4,Q_T=2.5,Q_HEAT=3,Q_HIT=2.2,Q_BASE=0.76,Q_GAIN=0.22,Q_NORMAL=0.74,W_LOSS=4.5,W_FOLD=0.72,W_STAR=3.2,W_STIFF=0.35,F_THR=0.15,F_STEER=0.72;
 
 const LANE_X=[-7.5,-2.5,2.5,7.5];
 
@@ -562,6 +562,53 @@ function buildPhonon(){ // PHONON — built for the cold. a crystal heart carryi
     halo.material.opacity=0.04+0.12*w;
     aft.material.opacity=0.08+0.3*st.n*(1-0.6*fz);
     for(let i=0;i<arms.length;i++)arms[i].spark.material.opacity=0.15+0.4*w*(1-fz);
+  };
+  return g;
+}
+
+function buildMiser(){ // MISER — a flask in gold foil. it keeps everything, and spends only when it must
+  const g=new THREE.Group();
+  const foil=new THREE.MeshStandardMaterial({color:0xd6ae58,roughness:0.34,metalness:0.95,flatShading:true});   // foil on foil, crinkled
+  const steel=new THREE.MeshStandardMaterial({color:0xb8bec8,roughness:0.24,metalness:0.9});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.05,3.4,10,3),foil);body.rotation.x=Math.PI/2;g.add(body);
+  const capF=new THREE.Mesh(new THREE.SphereGeometry(1.05,12,8),foil);capF.position.z=-1.7;capF.scale.z=0.6;g.add(capF);
+  const capA=new THREE.Mesh(new THREE.SphereGeometry(1.05,12,8),foil);capA.position.z=1.7;capA.scale.z=0.45;g.add(capA);
+  for(let i=-1;i<=1;i++){const b=new THREE.Mesh(new THREE.TorusGeometry(1.09,0.05,8,32),steel);b.position.z=i*1.05;g.add(b);}
+  const valve=new THREE.Mesh(new THREE.TorusGeometry(0.28,0.05,8,20),steel);valve.position.set(0,1.22,-0.5);valve.rotation.x=Math.PI/2;g.add(valve);
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.22,8),steel);stem.position.set(0,1.12,-0.5);g.add(stem);
+  const bell=new THREE.Mesh(new THREE.ConeGeometry(0.55,0.9,14,1,true),steel);bell.rotation.x=-Math.PI/2;bell.position.z=2.55;g.add(bell);
+  const spendG=new THREE.Mesh(new THREE.SphereGeometry(0.45,12,10),matGlow(0xffb06a,0));spendG.position.z=2.95;g.add(spendG);   // what it spends, leaving
+  let sp=0;
+  g.userData.anim=function(dt,st){
+    const s=(g.userData.spend||0),w=(g.userData.warm!==undefined?g.userData.warm:1);
+    sp+=(s-sp)*Math.min(1,dt*5);
+    spendG.material.opacity=0.03+0.34*sp*(0.3+0.7*w);spendG.scale.set(0.7+sp*0.25,0.7+sp*0.25,1+sp*0.9);
+    valve.rotation.z+=dt*(0.2+sp*3);
+  };
+  return g;
+}
+
+function buildMeissner(){ // MEISSNER — a superconducting ring, and a magnet floating in it on nothing
+  const g=new THREE.Group();
+  const coil=new THREE.MeshStandardMaterial({color:0x2c323e,roughness:0.36,metalness:0.88});
+  const frost=new THREE.MeshStandardMaterial({color:0xe6eef8,roughness:0.85,metalness:0.1,transparent:true,opacity:0.55});
+  const silver=new THREE.MeshStandardMaterial({color:0xd4dae4,roughness:0.3,metalness:0.6,emissive:0x8aa6c8,emissiveIntensity:0.18});
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.9,0.3,14,56),coil);g.add(ring);
+  const rime=new THREE.Mesh(new THREE.TorusGeometry(1.9,0.33,10,56),frost);g.add(rime);   // frost on the coil: it is colder than the sky
+  const glow=new THREE.Mesh(new THREE.TorusGeometry(1.9,0.07,8,56),matGlow(0x9fcfff,0.4));g.add(glow);
+  const puck=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.24,28),silver);puck.rotation.x=Math.PI/2;g.add(puck);   // the magnet, held up by nothing
+  const spine=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.16,2.6),coil);spine.position.set(0,-1.9,1.2);g.add(spine);
+  const aft=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.1,10,28),coil);aft.position.set(0,-1.9,2.5);g.add(aft);
+  const aftG=new THREE.Mesh(new THREE.SphereGeometry(0.3,10,8),matGlow(0x9fcfff,0.2));aftG.position.set(0,-1.9,2.7);g.add(aftG);
+  let ph=0,lev=1;
+  g.userData.anim=function(dt,st){
+    const sc=(g.userData.sc!==undefined?g.userData.sc:1),I=(g.userData.I!==undefined?g.userData.I:0.4);
+    lev+=(sc-lev)*Math.min(1,dt*(sc?1.2:6));   // superconducting, it holds the magnet up; gone normal, the magnet drops
+    ph+=dt*1.1;
+    puck.position.y=-1.5*(1-lev)+0.07*lev*dsin(ph);puck.rotation.z+=dt*0.3*lev;
+    glow.material.opacity=0.06+0.5*lev*(0.35+0.65*I);
+    aftG.material.opacity=0.06+0.28*st.n*lev;
+    rime.material.opacity=0.2+0.4*lev;
   };
   return g;
 }
@@ -753,7 +800,9 @@ function buildTrawler(){ // TRAWLER — it feeds on the sky it flies through
 }
 
 const VEHICLES=[
-  {key:'phonon',name:'PHONON',   line:'Built for the cold. Its heat lives in its lattice, and nowhere else.',  top:320, accel:52,  steer:24, radius:1.8, build:buildPhonon}
+  {key:'phonon',name:'PHONON',   line:'Built for the cold. Its heat lives in its lattice, and nowhere else.',  top:320, accel:52,  steer:24, radius:1.8, build:buildPhonon},
+  {key:'miser', name:'MISER',    line:'It keeps everything. It spends only when it must.',                     top:300, accel:46,  steer:22, radius:1.7, build:buildMiser},
+  {key:'meissner',name:'MEISSNER',line:'A magnet floating on nothing, over a ring colder than the sky.',        top:336, accel:56,  steer:26, radius:2.1, build:buildMeissner}
 ];
 const VEHICLES_HOME=[
   {key:'ship',  name:'VECTOR',     line:'Built to go fast. It spits fire. It is a spaceship, after all.',       top:330, accel:56,  steer:25, radius:2.2, build:buildShip},
@@ -1081,7 +1130,7 @@ function bayRespawn(o,k,init){
   if(o.key==='ship'){a[j]=(R()-0.5)*10;a[j+1]=-3+(init?R()*10:0);a[j+2]=(R()-0.5)*10;
     v[j]=(R()-0.5)*0.4;v[j+1]=0.7+R()*1.8;v[j+2]=(R()-0.5)*0.4;}
   else if(o.key==='pendulum'){a[j]=(R()-0.5)*18;a[j+1]=-2+R()*9;a[j+2]=(R()-0.5)*16;}
-  else if(o.key==='phonon'){a[j]=(R()-0.5)*20;a[j+1]=init?(-2+R()*10):8;a[j+2]=(R()-0.5)*18;v[j]=0;v[j+1]=-(0.04+R()*0.1);v[j+2]=0;}
+  else if(o.key==='phonon'||o.key==='miser'||o.key==='meissner'){a[j]=(R()-0.5)*20;a[j+1]=init?(-2+R()*10):8;a[j+2]=(R()-0.5)*18;v[j]=0;v[j+1]=-(0.04+R()*0.1);v[j+2]=0;}
   else if(o.key==='sail'){a[j]=init?(R()-0.5)*34:17;a[j+1]=-2.5+R()*8;a[j+2]=-9+R()*16;v[j]=-(5+R()*8);}
   else{const g=R()*6.283,rr=4+R()*11;a[j]=dcos(g)*rr;a[j+1]=0.3+dsin(g)*rr*0.6;
     a[j+2]=-(init?4+R()*28:32);v[j+2]=4+R()*5;}
@@ -1089,8 +1138,8 @@ function bayRespawn(o,k,init){
 (function(){
   try{
     VEHICLES.forEach(function(d,i){
-      const n={ship:150,pendulum:90,sail:170,trawler:280,phonon:120}[d.key]||100;
-      const col={ship:0xff8a3a,pendulum:0xbfdcff,sail:0xfff4dc,trawler:0xb89a64,phonon:0xdce8ff}[d.key]||0xffffff;
+      const n={ship:150,pendulum:90,sail:170,trawler:280,phonon:120,miser:90,meissner:140}[d.key]||100;
+      const col={ship:0xff8a3a,pendulum:0xbfdcff,sail:0xfff4dc,trawler:0xb89a64,phonon:0xdce8ff,miser:0xf2dcb0,meissner:0xcfe6ff}[d.key]||0xffffff;
       const g=new THREE.BufferGeometry(),a=new Float32Array(n*3);
       g.setAttribute('position',new THREE.BufferAttribute(a,3));
       const mat=new THREE.PointsMaterial({color:col,size:(d.key==='pendulum'?0.08:0.14),transparent:true,opacity:0,
@@ -1101,7 +1150,7 @@ function bayRespawn(o,k,init){
         if(BAY.dot){mat.map=BAY.dot;mat.size*=2.2;mat.needsUpdate=true;}}catch(e){}   // round motes, not squares
       const pts=new THREE.Points(g,mat);pts.frustumCulled=false;pts.visible=false;scene.add(pts);
       const L={ship:[0xff7a2a,2.6,34,0,-2.6,2.4],pendulum:[0x9fd4ff,2.4,40,0,5.5,0],
-               sail:[0xfff6e6,3.2,64,17,4,-2],trawler:[0xc7a46a,1.7,36,0,3,-7],phonon:[0xaec8ff,1.6,40,0,6,3]}[d.key];
+               sail:[0xfff6e6,3.2,64,17,4,-2],trawler:[0xc7a46a,1.7,36,0,3,-7],phonon:[0xaec8ff,1.6,40,0,6,3],miser:[0xffd8a0,1.3,34,0,5,4],meissner:[0x9fd0ff,1.8,42,0,6,-3]}[d.key];
       const l=new THREE.PointLight(L[0],0,L[2]);l.position.set(L[3],L[4],L[5]);scene.add(l);
       const o={key:d.key,pts:pts,a:a,v:new Float32Array(n*3),n:n,op:(d.key==='trawler'?0.62:0.85),l:l,li:L[1]};
       for(let k=0;k<n;k++)bayRespawn(o,k,true);
@@ -1129,7 +1178,7 @@ function updateBay(dt,on){
       a[j]+=v[j]*dt;a[j+1]+=v[j+1]*dt;a[j+2]+=v[j+2]*dt;
       if(o.key==='ship'&&a[j+1]>7.5)bayRespawn(o,k,false);
       if(o.key==='sail'&&a[j]<-17)bayRespawn(o,k,false);
-      if(o.key==='phonon'&&a[j+1]<-3)bayRespawn(o,k,false);
+      if((o.key==='phonon'||o.key==='miser'||o.key==='meissner')&&a[j+1]<-3)bayRespawn(o,k,false);
     }
     o.pts.geometry.attributes.position.needsUpdate=true;
   }
@@ -1304,6 +1353,8 @@ const VOICE={ship:{f0:38,fr:9,rf:105,rr:70,b:0.07,g:0.16,gb:0.07,sm:0.7,wh:0.004
   pendulum:{f0:31,fr:3,rf:70,rr:20,b:0.02,g:0.035,gb:0.015,sm:0.5,wh:0,h:0.014,hf:240,hr:40,fl:0,fr2:0,fd:0},
   sail:{f0:30,fr:0,rf:60,rr:0,b:0,g:0,gb:0,sm:0,wh:0,h:0,hf:300,hr:0,fl:0,fr2:0,fd:0},
   phonon:{f0:44,fr:2,rf:84,rr:14,b:0.012,g:0.026,gb:0.01,sm:0.62,wh:0,h:0.018,hf:420,hr:50,fl:0,fr2:0,fd:0},   // a lattice ringing, low
+  miser:{f0:34,fr:4,rf:70,rr:40,b:0.02,g:0.04,gb:0.016,sm:0.6,wh:0,h:0.012,hf:180,hr:60,fl:1.6,fr2:0.8,fd:0.2},   // a small flame, kept
+  meissner:{f0:50,fr:1,rf:120,rr:10,b:0.008,g:0.02,gb:0.008,sm:0.7,wh:0,h:0.03,hf:600,hr:40,fl:0,fr2:0,fd:0},   // coils, humming
   trawler:{f0:57,fr:6,rf:240,rr:120,b:0.035,g:0.06,gb:0.03,sm:0.55,wh:0,h:0.032,hf:170,hr:90,fl:2.6,fr2:1.2,fd:0.45}};
 function setEngine(n,boost,quiet){
   if(!actx||!engRumbleF)return;
@@ -1635,8 +1686,8 @@ function showVehicle(){
   try{$('gNextLbl').textContent='next \u00b7 '+VEHICLES[(sel+1)%VEHICLES.length].name;}catch(e){}
   vLine.textContent=d.line;
   // each machine, as it meets this world
-  const TRAITS={phonon:'CARRIES ITS OWN WARMTH \u00b7 HOLD TO FOLD'};
-  const HOWTO={phonon:'All it has is the heat it left with, and the cold takes it through every surface. Hold to fold: the lattice draws in, it loses less, and it moves and steers less. A warm body loses heat fastest. Too cold and it stiffens; let it go out and it is still. Only the star gives warmth back.'};
+  const TRAITS={phonon:'CARRIES ITS OWN WARMTH \u00b7 HOLD TO FOLD',miser:'KEEPS EVERYTHING \u00b7 HOLD TO SPEND',meissner:'SUPERCONDUCTING \u00b7 HOLD TO DRAW CURRENT'};
+  const HOWTO={miser:'Wrapped in foil on foil, it loses a fraction of what anything else would, and catches little of the star. Hold to spend: its warmth runs its engine, and with a cold side one degree above nothing a heat engine here is almost perfect. Spend it all and it is still.',meissner:'Below 9.2 K its coils carry current with no loss at all: the cold is what it runs on. Hold to draw full current. A knock warms it, and so does the star; draw more than the cold allows and it quenches, its coils going normal at once. It cannot freeze. It can only warm.',phonon:'All it has is the heat it left with, and the cold takes it through every surface. Hold to fold: the lattice draws in, it loses less, and it moves and steers less. A warm body loses heat fastest. Too cold and it stiffens; let it go out and it is still. Only the star gives warmth back.'};
   $('vTraits').textContent=TRAITS[d.key]||'';
   $('vHow').textContent=HOWTO[d.key]||'';
   try{const ch=crewHTML(d.key);$('gCrew').innerHTML=ch;$('gCrew').style.display=ch?'block':'none';
@@ -1794,7 +1845,7 @@ function confirmPick(){
   gridUI.style.display='none';
   selRing.visible=false;
   hudEl.classList.add('on');
-  boostBtn.textContent=({ship:'BURN',sail:'TRIM',trawler:'SCOOP',pendulum:'WIND',phonon:'FOLD'})[player.def.key]||'HOLD';   // the button says what holding does
+  boostBtn.textContent=({ship:'BURN',sail:'TRIM',trawler:'SCOOP',pendulum:'WIND',phonon:'FOLD',miser:'SPEND',meissner:'DRAW'})[player.def.key]||'HOLD';   // the button says what holding does
   if(coarse)boostBtn.style.display='flex';
   // the first crossing on a phone says how, once
   try{if(coarse&&localStorage.getItem('moonline.taught')!=='1'){
@@ -1914,7 +1965,7 @@ function updateGrid(dt){
   camera.lookAt(aspect<0.9?0:-3.4,(aspect<0.6?-1.6:(aspect<0.9?-3.6:-0.5)),0);
   camera.fov=(aspect<0.9?60:46);camera.updateProjectionMatrix();
   placeWorld(0);placeRacers(0,dt);
-  setEngine(({ship:0.13,pendulum:0.03,sail:0,trawler:0.09,phonon:0.04})[VEHICLES[sel].key]||0.06,false,false);   // each machine's own hum; the sail has none
+  setEngine(({ship:0.13,pendulum:0.03,sail:0,trawler:0.09,phonon:0.04,miser:0.05,meissner:0.04})[VEHICLES[sel].key]||0.06,false,false);   // each machine's own hum; the sail has none
 }
 
 function updateCount(dt){
@@ -2024,6 +2075,7 @@ function hitPlayer(o){
   player.lastHit=raceT;player.rattle=0.26;
   if(phase==='race'){
     cargo=Math.max(0,cargo-(2.5+5*sz));
+    if(player.def.key==='meissner')player.coilT=(player.coilT||1.6)+Q_HIT*(0.6+sz);   // a knock warms a superconductor
     const ax=o?Math.abs(o.x-player.x):0,ay=o?Math.abs(o.y-player.y):0,R=player.def.radius;
     addScar(ax>R*0.9?'wing':(ay>R*0.7?'hull':'nose'),0.05+0.15*sz);
   }
@@ -2073,17 +2125,48 @@ function updateRace(dt){
   playerBoosting=false; p.steerMul=1; p.accMul=1;
   if(p.charge===undefined){p.charge=0;p.burnT=0;p.cut=0;p.bank=0;p.beamV=0;p.foldK=0;}
   densK=0;windU=0;windV=0;appWind=0;
-  // PHONON FOLDS. the lattice draws in over about half a second, and opens again as slowly.
-  p.foldK+=((want?1:0)-p.foldK)*Math.min(1,dt*2.2);
-  const fk=p.foldK,area=1-W_FOLD*fk,w=warmth/100;
-  const loss=W_LOSS*area*(0.3+0.7*w*w)*(p.scarExp||1);   // it radiates through every surface; warm, it radiates fastest
-  const gain=W_STAR*secP(p.s,'star')*(0.4+0.6*area);      // the star's light, caught on whatever is open to it
-  warmth=clamp(warmth+(gain-loss)*dt,0,100);
-  const stiff=clamp(w/W_STIFF,0,1);                        // cold, the lattice stiffens: everything answers slower
-  thrustMul=(1-F_THR*fk)*(0.3+0.7*stiff);
-  p.steerMul=(1-F_STEER*fk)*(0.25+0.75*stiff);
-  p.charge=fk*100;
-  p.mesh.userData.fold=fk;p.mesh.userData.warm=w;
+  const w=warmth/100,stiff=clamp(w/W_STIFF,0,1);           // cold, a warm machine stiffens: everything answers slower
+  if(VK==='phonon'){
+    // PHONON FOLDS. the lattice draws in over about half a second, and opens again as slowly.
+    p.foldK+=((want?1:0)-p.foldK)*Math.min(1,dt*2.2);
+    const fk=p.foldK,area=1-W_FOLD*fk;
+    const loss=W_LOSS*area*(0.3+0.7*w*w)*(p.scarExp||1);   // it radiates through every surface; warm, it radiates fastest
+    const gain=W_STAR*secP(p.s,'star')*(0.4+0.6*area);      // the star's light, caught on whatever is open to it
+    warmth=clamp(warmth+(gain-loss)*dt,0,100);
+    thrustMul=(1-F_THR*fk)*(0.3+0.7*stiff);
+    p.steerMul=(1-F_STEER*fk)*(0.25+0.75*stiff);
+    p.charge=fk*100;
+    p.mesh.userData.fold=fk;p.mesh.userData.warm=w;
+  }
+  else if(VK==='miser'){
+    // MISER KEEPS. foil on foil: it loses a fraction of what anything else would, and catches little of the star.
+    // hold and it spends: its warmth runs a heat engine whose cold side is one degree above nothing.
+    const loss=M_LOSS*(0.3+0.7*w*w)*(p.scarExp||1);
+    const gain=W_STAR*secP(p.s,'star')*M_GAIN;
+    const spend=(want&&warmth>0)?M_SPEND:0;
+    if(spend>0)playerBoosting=true;
+    warmth=clamp(warmth+(gain-loss-spend)*dt,0,100);
+    thrustMul=(M_BASE+(spend>0?M_BOOST:0))*(0.3+0.7*stiff);
+    p.steerMul=0.25+0.75*stiff;
+    p.charge=(spend>0?100:0);
+    p.mesh.userData.spend=(spend>0?1:0);p.mesh.userData.warm=w;
+  }
+  else if(VK==='meissner'){
+    // MEISSNER IS SUPERCONDUCTING. below 9.2 K its coils carry current with no loss at all. the cold is its friend;
+    // warmth is what it fears. hold to draw full current. more current than the cold allows, and it quenches.
+    if(p.coilT===undefined){p.coilT=1.6;p.quench=0;}
+    const am=secP(p.s,'amb');
+    p.coilT+=(Math.max(am,1.2)-p.coilT)*Math.min(1,dt*Q_COOL);   // it settles to the cold around it
+    if(want)p.coilT+=Q_LEAD*dt;                                // the current leads carry heat in
+    const I=(want?Q_FULL:Q_CRUISE),sc=p.coilT<TC,Ic=sc?(1-(p.coilT/TC)*(p.coilT/TC)):0;
+    if(p.quench>0){p.quench-=dt;thrustMul=Q_NORMAL;}
+    else if(!sc){thrustMul=Q_NORMAL;}                          // gone normal: the coils are ordinary wire, and slow
+    else if(I>Ic){p.quench=Q_T;p.coilT+=Q_HEAT;thrustMul=Q_NORMAL;try{reactorCut();}catch(e){}   // what the coils held, dumped as heat
+      annEl.textContent='quench';annEl.classList.add('show');annT=-1;}
+    else{thrustMul=Q_BASE+Q_GAIN*I;playerBoosting=want;}
+    p.charge=sc?clamp(I/Math.max(0.01,Ic),0,1)*100:100;
+    p.mesh.userData.sc=(sc&&p.quench<=0)?1:0;p.mesh.userData.I=I;
+  }
   boostMeter=p.charge;
   // speed — heat derates the machine. that is what heat does.
   const derate=1-0.22*clamp((heat-100)/30,0,1);
@@ -2238,16 +2321,20 @@ function updateRace(dt){
   }
   hudPos.textContent=fmtTime(raceT);   // how long you have been exposed to this world
   hudDist.textContent='INWARD '+clamp(Math.floor(p.s/FINISH*100),0,100)+'%';
-  {const am=secP(p.s,'amb');$('hudBeat').textContent='AROUND YOU '+(am<10?am.toFixed(1):Math.round(am))+' K \u00b7 PHONON '+Math.round(30+260*warmth/100)+' K';}
+  {const am=secP(p.s,'amb'),ak=(am<10?am.toFixed(1):Math.round(am))+' K';
+   $('hudBeat').textContent='AROUND YOU '+ak+' \u00b7 '+(VK==='meissner'?('COILS '+(p.coilT||1.6).toFixed(1)+' K'):(p.def.name+' '+Math.round(30+260*warmth/100)+' K'));}
   hudSpd.textContent=Math.round(p.speed*SPD_KM)+' KM/S';
   boostFill.style.width=boostMeter+'%';
   $('hudCargo').textContent='PASSENGERS ASLEEP '+Math.floor(cargo)+'%';
-  {const VBL={phonon:'FOLD'};
-   let vbx=((p.foldK||0)>0.6?' \u2014 FOLDED':' \u2014 OPEN');
-   if(warmth/100<W_STIFF)vbx+=' \u2014 STIFF';
+  {const VBL={phonon:'FOLD',miser:'SPEND',meissner:'CURRENT'};
+   let vbx='';
+   if(VK==='phonon')vbx=((p.foldK||0)>0.6?' \u2014 FOLDED':' \u2014 OPEN');
+   if(VK==='miser')vbx=(boostHeld()&&warmth>0?' \u2014 SPENDING':' \u2014 KEEPING');
+   if(VK==='meissner')vbx=((p.quench||0)>0?' \u2014 QUENCH':((p.coilT||0)>=TC?' \u2014 NORMAL':' \u2014 SUPERCONDUCTING'));
+   if(VK!=='meissner'&&warmth/100<W_STIFF)vbx+=' \u2014 STIFF';
    $('vbLabel').textContent=(VBL[p.def.key]||'')+vbx;}
-  heatFill.style.width=warmth+'%';
-  heatFill.classList.toggle('over',warmth/100<W_STIFF);
+  if(VK==='meissner'){heatFill.style.width=clamp((p.coilT||0)/TC,0,1)*100+'%';heatFill.classList.toggle('over',(p.coilT||0)>=TC||(p.quench||0)>0);}
+  else{heatFill.style.width=warmth+'%';heatFill.classList.toggle('over',warmth/100<W_STIFF);}
   // your line: kept as you fly it, and read back against the one you flew before
   clipSpd.push(Math.round(p.speed));clipNear.push(Math.round((p.nearK||0)*100));
   if((ghostTick++)%6===0)ghostRec.push(Math.round(p.s),Math.round(p.x*10),Math.round(p.y*10));
@@ -2277,7 +2364,8 @@ function updateDone(dt){
   const p=player;
   // engines off. in the star's light it coasts on, warming. frozen, it simply stops.
   p.speed*=(1-(frozen?1.4:0.05)*dt);p.beamV=(p.beamV||0)*(1-0.32*dt);
-  if(!frozen)warmth=Math.min(100,warmth+W_STAR*0.5*dt);if(p.mesh&&p.mesh.userData)p.mesh.userData.warm=warmth/100;
+  if(!frozen&&p.def.key!=='meissner')warmth=Math.min(100,warmth+W_STAR*(p.def.key==='miser'?M_GAIN:0.5)*dt);
+  if(p.def.key==='meissner'){p.coilT=(p.coilT||1.6)+(60-(p.coilT||1.6))*Math.min(1,dt*0.05);if(p.mesh&&p.mesh.userData)p.mesh.userData.sc=(p.coilT<TC?1:0);}if(p.mesh&&p.mesh.userData)p.mesh.userData.warm=warmth/100;
   p.s+=(p.speed+(p.beamV||0))*dt;
   // THE HAND-OFF. for a breath the camera holds where it was; then it lets go of the machine.
   // the machine goes on into the world at its own speed; the camera drifts slower, and watches it go.
@@ -2309,7 +2397,8 @@ function updateDone(dt){
   warmLvl+=(0.2-warmLvl)*Math.min(1,dt);
   ambientL.intensity=0.9*lightLevel;warmL.intensity=1.1*warmLvl;sun.intensity=1.2*lightLevel;
   heat=0;
-  heatFill.style.width=warmth+'%';heatFill.classList.toggle('over',warmth/100<W_STIFF);
+  if(p.def.key==='meissner'){heatFill.style.width=clamp((p.coilT||0)/TC,0,1)*100+'%';heatFill.classList.toggle('over',(p.coilT||0)>=TC);}
+  else{heatFill.style.width=warmth+'%';heatFill.classList.toggle('over',warmth/100<W_STIFF);}
   veilEl.style.opacity=0;
   hudEl.classList.remove('quiet');
   // arrival: the engine winds down, you coast, received — then the card
@@ -2333,7 +2422,7 @@ function updateDone(dt){
     }else{
       const grewKm=Math.round(T*164);   // the outflow spreads at about 164 km/s
       resTitle.innerHTML='While you crossed, the nebula grew by about <b>'+grewKm.toLocaleString('en-GB')+' kilometres</b>, and it is still cooling as it grows.';
-      resSub.innerHTML='<div class="uSay">it is about one degree above absolute zero, colder than the light left over from the beginning of the universe: the only place known where that light warms what it touches. first seen in 1980, and named for the shape its lobes seemed to make.</div><div class="uExp">'+fmtTime(T)+' in the cold \u00b7 '+p.def.name+' arrived with '+Math.round(warmth)+'% of its warmth.'+'</div>';
+      resSub.innerHTML='<div class="uSay">it is about one degree above absolute zero, colder than the light left over from the beginning of the universe: the only place known where that light warms what it touches. first seen in 1980, and named for the shape its lobes seemed to make.</div><div class="uExp">'+fmtTime(T)+' in the cold \u00b7 '+(p.def.key==='meissner'?(p.def.name+' came through superconducting as far as the dust round the star.'):(p.def.name+' arrived with '+Math.round(warmth)+'% of its warmth.'))+'</div>';
     }
     {const ec=endCond(),nNew=RUNSCARS.length;
      let cl=(frozen?'the tardigrades are '+Math.floor(cargo)+'% unharmed, still asleep \u00b7 ':'the tardigrades arrived '+Math.floor(cargo)+'% unharmed, still asleep \u00b7 ')+p.def.name+(nNew?' took '+nNew+' scar'+(nNew>1?'s':''):' took no scars');
@@ -3098,7 +3187,7 @@ window.addEventListener('resize',function(){
 window.__ML={
   get phase(){return phase;},
  get doneT(){return doneT;},
-  sky:function(){const sc=sectionAt(player?player.s:0);return {name:sc.name,den:sc.den,light:sc.light,near:(player&&player.nearK)||0,warmth:warmth,fold:(player&&player.foldK)||0,frozen:frozen};},
+  sky:function(){const sc=sectionAt(player?player.s:0);return {name:sc.name,den:sc.den,light:sc.light,near:(player&&player.nearK)||0,warmth:warmth,fold:(player&&player.foldK)||0,coil:(player&&player.coilT)||0,quench:(player&&player.quench)||0,amb:secP(player?player.s:0,'amb'),frozen:frozen};},
   wind:function(s,x,y){return windAt(s,x,y,t);},
   setReplay:function(flat){const h=[];for(let i=0;i<flat.length;i+=3)h.push({x:flat[i],y:flat[i+1],b:!!flat[i+2]});REPLAY={at:function(i){return h[Math.min(i,h.length-1)];}};},
   get lineTime(){return (player&&player.fTime)||0;},

@@ -30,7 +30,7 @@ real distance: Echo 01, Mariner 02, Crescent 03, Fathom 04, Metronome 05. All fi
 | II · 03 | Crescent | Io, the most volcanic world we know | the squeeze, and the dose · Jupiter's radiation counts every second you linger |
 | II · 04 | Fathom | Neptune, the planet found by mathematics | wind, then weight · the fastest winds in the solar system, then a dark that ends in diamond |
 | II · 05 | Metronome | CP 1919 (PSR B1919+21), the first pulsar ever found | rhythm · a beam no eye has seen turns once every 1.3373 s, and acts on *when* |
-| beyond | Still | the Boomerang Nebula, the coldest place known | cold · one machine, and all it has is the warmth it carries |
+| beyond | Still | the Boomerang Nebula, the coldest place known | cold · three machines built for it: PHONON, MISER, MEISSNER |
 
 Beyond the five, **Still**: the Boomerang Nebula, in Centaurus, about 5,000 light-years out. It is not on the descent
 until a witness has crossed the whole voyage on their device; then it emerges there, and can be entered. A dying star
@@ -39,10 +39,16 @@ colder than the light left over from the beginning of the universe (Sahai and Ny
 that light warms what it touches, so against the sky's own glow it is darker than the dark. That patch has been in
 every world's sky. In Still it is dead ahead, and you fly into it.
 
-The four stay home: nothing they burn would last out there. One machine goes, **PHONON**, built for the cold, and
-all it has is the warmth it left with. It radiates through every surface, and a warm body radiates fastest. Hold,
-and the lattice folds: less surface, less loss, and less speed and steering too. Too cold and it stiffens; let the
-warmth go out and it is still, and the crossing ends there and leaves no line. The gas is far too thin to push
+The four stay home: nothing they burn would last out there. Three machines are built for it. **PHONON**'s
+warmth is all it has, and it radiates through every surface; a warm body radiates fastest. Hold, and the lattice
+folds: less surface, less loss, and less speed and steering too. **MISER** is a flask in foil on foil and loses a
+fraction of what anything else would, but catches little of the star; hold and it spends its warmth through a heat
+engine whose cold side is one degree above nothing, as near perfect as an engine can be. Either one, let the warmth
+go out and it is still, and the crossing ends there and leaves no line. **MEISSNER** carries no warmth worth the
+name: it is superconducting, and below 9.2 K its coils carry current with no loss at all, the magnet floating in its
+ring on nothing. Hold to draw full current. A knock warms it, the current leads carry heat in, and nearer the star
+the world itself is warmer than its coils can bear; more current than the cold allows and it quenches, the coils
+going normal at once and dumping what they held as heat, and the magnet drops. It cannot freeze. It can only warm. The gas is far too thin to push
 anything, but what the outflow carries comes at you at 164 km/s: knots of dust and frozen gas, to dodge open or take
 folded. Through the shell, the outflow, the lobes lit only by scattered starlight, and the dust of the waist that
 hides the star, and out into the star's own light, the only warmth there is. The cargo is tardigrades, asleep: the
