@@ -101,7 +101,9 @@ ahead of the pen where the next pulse will land.
 
 In Edition II the machine remembers. A knock leaves a **scar** you can see and hear, with a small,
 honest effect on how it flies. A hangar crew mends it in real time while you are away: half in twelve
-hours, whole in a day, and flying sooner is a request for early release. Each crossing carries
+hours, whole in a day, and flying sooner is a request for early release. Leaving a crossing does not undo it: a
+knock is kept the moment it happens, and a machine released early comes back to the crew's unfinished work, which
+picks up where it stopped. Each crossing carries
 **cargo** that must arrive whole (in the Boomerang, tardigrades asleep; on Venus, a capsule that must arrive cold; on Mars, solar panels kept clear of dust; over Io, images kept clear of the radiation; in Neptune, a sealed sphere carried down; in Metronome, a clock kept in phase with the beat): exposure wears
 it down over time, impact all at once. A line carries the machine's condition at the start, so a
 scarred machine re-runs scarred.

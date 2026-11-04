@@ -1603,20 +1603,21 @@ const PARTS={ship:{nose:'nose cone',hull:'hull plate',wing:'wing edge',drive:'no
   sail:{nose:'prow',hull:'hull',wing:'sail',drive:'spar'},
   trawler:{nose:'intake ring',hull:'spine',wing:'vane',drive:'engine'}};
 const MEND={nose:'refaced',hull:'patched',wing:'trued',drive:'realigned'};
+function machLive(){return !WITNESSING&&!COND_LOCKED&&!HANDED_MACH&&!REPLAY&&!!player;}   // a crossing flown here and now, by this pilot
 function machKey(k){return 'moonline.e2.machine.'+k;}
 function loadMach(k){try{const v=localStorage.getItem(machKey(k));const m=v?JSON.parse(v):null;return (m&&m.scars&&m.scars.length&&m.landed)?m:null;}catch(e){return null;}}
 function saveMach(k,o){try{if(!o||!o.scars||!o.scars.length)localStorage.removeItem(machKey(k));else localStorage.setItem(machKey(k),JSON.stringify(o));}catch(e){}}
 // the crew works through the scars worst first. together they take a day, whatever the damage.
 function crewPlan(m){
   const tot=m.scars.reduce(function(a,s){return a+s.w;},0)||1;let at=m.landed;
-  return m.scars.slice().sort(function(a,b){return b.w-a.w;}).map(function(s){const st=at;at+=E2_DAY*s.w/tot;return {p:s.p,w:s.w,st:st,en:at};});
+  return m.scars.slice().sort(function(a,b){return b.w-a.w;}).map(function(s){const st=at;at+=(m.m0?E2_DAY*(1-m.m0):E2_DAY)*s.w/tot;return {p:s.p,w:s.w,st:st,en:at};});
 }
 function machNow(k,now){   // what is left of each scar right now, and how far the crew has got
   const m=loadMach(k);if(!m)return {scars:[],mend:1,plan:[],m:null};
   const plan=crewPlan(m);
   const left=plan.map(function(q){const f=now>=q.en?0:(now<=q.st?1:(q.en-now)/(q.en-q.st));return {p:q.p,w:Math.round(q.w*f*100)/100};})
     .filter(function(s){return s.w>0;});
-  return {scars:left,mend:clamp((now-m.landed)/E2_DAY,0,1),plan:plan,m:m};
+  return {scars:left,mend:clamp((m.m0||0)+(now-m.landed)/E2_DAY,0,1),plan:plan,m:m};
 }
 let COND={s:[],rel:100};   // the machine's condition as this crossing begins: [[part, hundredths]], released at %
 let COND_LOCKED=false;     // set by a line, a clip or a handed machine: the condition is theirs, not the hangar's
@@ -1657,6 +1658,7 @@ function scarMarks(mesh,key,list){   // you see it: scorches, and a crack still 
 }
 function addScar(part,w){
   RUNSCARS.push([part,Math.max(1,Math.round(w*100))]);
+  if(machLive()){try{saveMach(player.def.key,{v:1,landed:Date.now(),scars:endCond().s.map(function(s){return {p:s[0],w:s[1]/100};})});}catch(e){}}   /*CREWHARD*/ // kept the moment it happens: leaving does not undo it
   if(player){applyScarEffects(player);if(!WITNESSING){try{scarMarks(player.mesh,player.def.key,COND.s.concat(RUNSCARS));}catch(e){}}}
 }
 function crewHTML(k){
@@ -1854,6 +1856,7 @@ function confirmPick(){
     localStorage.setItem('moonline.taught','1');}}catch(e){}
   RNG=mulberry32(SEED);                            // from here, the universe is the seed's
   if(!COND_LOCKED)COND=HANDED_MACH?HANDED_MACH.cond:condFromNow(player.def.key);
+  if(machLive()&&COND.s.length){try{saveMach(player.def.key,{v:1,landed:Date.now(),m0:COND.rel/100,scars:COND.s.map(function(s){return {p:s[0],w:s[1]/100};})});}catch(e){}}   // out of the hangar: the crew's unfinished work waits for it
   RUNSCARS=[];cargo=100;applyScarEffects(player);
   try{scarMarks(player.mesh,player.def.key,COND.s);}catch(e){}
   if(!WITNESSING&&!COND_LOCKED&&!HANDED_MACH&&COND.s.length){
@@ -2429,8 +2432,10 @@ function updateDone(dt){
      if(HANDED_MACH)cl+=' \u00b7 carried by '+(HANDED_MACH.hands+1)+' hands';
      resSub.innerHTML+='<div class="uCond">'+cl+'</div>';
      if(!HANDED_MACH&&!REPLAY&&!COND_LOCKED){
-       if(ec.s.length){saveMach(p.def.key,{v:1,landed:Date.now(),scars:ec.s.map(function(s){return {p:s[0],w:s[1]/100};})});
+       if(ec.s.length&&(nNew||!COND.s.length)){saveMach(p.def.key,{v:1,landed:Date.now(),scars:ec.s.map(function(s){return {p:s[0],w:s[1]/100};})});
          resSub.innerHTML+='<div class="uLine">the crew has it now \u00b7 whole in 24 hours</div>';}
+       else if(ec.s.length){const mn=machNow(p.def.key,Date.now()),lh=Math.max(1,Math.round(E2_DAY*(1-mn.mend)/3600000));   /*CREWBACK*/ // back clean: the crew picks up where it stopped
+         resSub.innerHTML+='<div class="uLine">the crew has it back \u00b7 whole in '+lh+' hour'+(lh>1?'s':'')+'</div>';}
        else saveMach(p.def.key,null);}}
     if(!frozen)(function(){const m=p.fTime;const sl=loadLine();
       try{$('btnClip').style.display='inline-block';}catch(e){}
