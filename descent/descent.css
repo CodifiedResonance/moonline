@@ -282,6 +282,7 @@
 .ml-area{resize:vertical;min-height:120px;}
 select.ml-input{cursor:pointer;}
 select.ml-input option{background:#0a0e16;color:#F3F6FF;}
+select.ml-input optgroup{background:#0a0e16;color:#c9a45c;font-style:normal;font-weight:500;letter-spacing:.06em;}
 .ml-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;}
 .ml-log-send{
   margin-top:6px;
